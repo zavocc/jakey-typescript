@@ -1,6 +1,7 @@
 dist/
-node_modules
-package-lock.json
+node_modules/
 src/config.json
+src/harbour
+package-lock.json
 .env.development
 .env

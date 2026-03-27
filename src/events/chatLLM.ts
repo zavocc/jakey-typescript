@@ -8,6 +8,9 @@ module.exports = {
     if (message.author.bot) return;
     if (!message.client.user) return;
 
+    // Get user ID for chat context
+    const userId = String(message.author.id);
+
     // Strip message, remove of the bot itself and trim whitespace
     const strippedContent = message.content.replace(new RegExp(`<@!?${message.client.user.id}>`, "g"), "").trim();
 
@@ -17,7 +20,7 @@ module.exports = {
       await message.channel.sendTyping();
 
       try {
-        const response = await completion(strippedContent);
+        const response = await completion(strippedContent, userId);
         // send as message but not reply
         await message.channel.send(response);
       } catch (error) {
