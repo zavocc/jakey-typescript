@@ -49,8 +49,7 @@ const eventsPath = path.join(__dirname, 'events');
 const eventFiles = fs.readdirSync(eventsPath).filter((file) => file.endsWith('.ts'));
 for (const file of eventFiles) {
 	const filePath = path.join(eventsPath, file);
-  const loaded = require(filePath);
-  const event = loaded.default ?? loaded; // loads both CommonJS and ES module exports
+  const event  = require(filePath); // Requires CJS as ESM imports require async, which Discord.JS top level does not support yet
 	if (event.once) {
 		botClient.once(event.name, (...args) => event.execute(...args));
 	} else {
