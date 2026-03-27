@@ -6,8 +6,6 @@ import { app_id, token } from "../config.json";
 import fs from "node:fs";
 import path from "node:path";
 
-const shouldClearGlobal = process.argv.includes("--clear-global");
-
 const commands = [];
 const commandNames = new Set<string>();
 // Grab all the command folders from the commands directory you created earlier
@@ -50,10 +48,8 @@ const rest = new REST().setToken(token);
 // and deploy your commands!
 (async () => {
   try {
-    if (shouldClearGlobal) {
-      await rest.put(Routes.applicationCommands(app_id), { body: [] });
-      console.log("Cleared global application (/) commands.");
-    }
+    await rest.put(Routes.applicationCommands(app_id), { body: [] });
+    console.log("Cleared global application (/) commands.");
 
     console.log(
       `Started refreshing ${commands.length} application (/) commands.`,

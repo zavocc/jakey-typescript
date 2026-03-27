@@ -8,8 +8,7 @@
     "dev": "tsx src/index.ts",
     "build": "tsc",
     "start": "node dist/index.js",
-    "deploy": "tsx src/utils/deploy-commands.ts",
-    "deploy:sync": "tsx src/utils/deploy-commands.ts --clear-global"
+    "deploy": "tsx src/utils/deploy-commands.ts"
   },
   "keywords": [],
   "author": "",
