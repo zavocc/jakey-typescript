@@ -2,11 +2,10 @@
 // But with casting and other typescript-specific stuff
 
 import { REST, Routes } from "discord.js";
-import { app_id, guild_id, token } from "../config.json";
+import { app_id, token } from "../config.json";
 import fs from "node:fs";
 import path from "node:path";
 
-const shouldClearGuild = process.argv.includes("--clear-guild");
 const shouldClearGlobal = process.argv.includes("--clear-global");
 
 const commands = [];
@@ -56,20 +55,13 @@ const rest = new REST().setToken(token);
       console.log("Cleared global application (/) commands.");
     }
 
-    if (shouldClearGuild) {
-      await rest.put(Routes.applicationGuildCommands(app_id, guild_id), {
-        body: [],
-      });
-      console.log("Cleared guild application (/) commands.");
-    }
-
     console.log(
       `Started refreshing ${commands.length} application (/) commands.`,
     );
 
-    // The put method is used to fully refresh all commands in the guild with the current set
+    // The put method is used to fully refresh all global commands with the current set
     const data = (await rest.put(
-      Routes.applicationGuildCommands(app_id, guild_id),
+      Routes.applicationCommands(app_id),
       { body: commands },
     )) as unknown[];
 
