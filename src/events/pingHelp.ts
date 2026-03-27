@@ -1,5 +1,5 @@
-const { Events } = require("discord.js");
-const { HELP_MESSAGE } = require("../constants");
+import { Events } from "discord.js";
+import { HELP_MESSAGE } from "../constants";
 
 // CommonJS export
 module.exports = {

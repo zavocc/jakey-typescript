@@ -1,5 +1,5 @@
-const { Events } = require("discord.js");
-const { completion } = require("../lib/llm/chat/generateContent");
+import { Events } from "discord.js";
+import { completion } from "../lib/llm/chat/generateContent";
 
 // CommonJS export
 module.exports = {

@@ -1,4 +1,4 @@
-const { ActivityType, Events } = require('discord.js');
+import { ActivityType, Events } from "discord.js";
 
 // CommonJS export
 module.exports = {
