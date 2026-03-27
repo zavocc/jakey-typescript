@@ -14,6 +14,7 @@ export async function completion(
         model: openrouter.chat('google/gemini-2.0-flash-001'),
         prompt: prompt,
         system: systemMessage,
+        temperature: 1
     });
 
     return text;
