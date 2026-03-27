@@ -2,16 +2,12 @@
 import config from "./config.json";
 
 import {
-  ActivityType,
   Client,
   Collection,
-  Events,
   GatewayIntentBits,
-  MessageFlags,
 } from "discord.js";
 import fs from "fs";
 import path from "path";
-import { HELP_MESSAGE } from "./constants";
 
 // Create a new client instance
 const botClient: Client = new Client({
@@ -20,18 +16,6 @@ const botClient: Client = new Client({
     GatewayIntentBits.GuildMessages,
     GatewayIntentBits.MessageContent,
   ],
-});
-
-botClient.once(Events.ClientReady, (readyClient) => {
-  console.log(`Ready! Logged in as ${readyClient.user.tag}`);
-
-  // Set status
-  readyClient.user.setActivity("sex", {
-    type: ActivityType.Playing,
-  });
-
-  // Set presence to DND
-  readyClient.user.setStatus("idle");
 });
 
 // Register commands
@@ -60,44 +44,18 @@ for (const folder of commandFolders) {
   }
 }
 
-botClient.on(Events.InteractionCreate, async (interaction) => {
-  if (!interaction.isChatInputCommand()) return;
-  const command = botClient.commands.get(interaction.commandName);
-  if (!command) {
-    console.error(`No command matching ${interaction.commandName} was found.`);
-    return;
-  }
-  try {
-    await command.execute(interaction);
-  } catch (error) {
-    console.error(error);
-
-    // Check if the interaction has already been acknowledged to decide whether to reply or follow-up
-    if (interaction.replied || interaction.deferred) {
-      await interaction.followUp({
-        content: "There was an error while executing this command!",
-        flags: MessageFlags.Ephemeral,
-      });
-    } else {
-      await interaction.reply({
-        content: "There was an error while executing this command!",
-        flags: MessageFlags.Ephemeral,
-      });
-    }
-  }
-});
-
-// Add MessageCreate event handler
-botClient.on(Events.MessageCreate, async (message) => {
-  if (message.author.bot) return;
-
-  // If the bot is mentioned, respond with a ping
-  if (message.mentions.has(botClient.user)) {
-    await message.reply({
-      content: HELP_MESSAGE(message.author.id, botClient.user.username),
-    });
-  }
-});
+// load events
+const eventsPath = path.join(__dirname, 'events');
+const eventFiles = fs.readdirSync(eventsPath).filter((file) => file.endsWith('.ts'));
+for (const file of eventFiles) {
+	const filePath = path.join(eventsPath, file);
+	const event = require(filePath);
+	if (event.once) {
+		botClient.once(event.name, (...args) => event.execute(...args));
+	} else {
+		botClient.on(event.name, (...args) => event.execute(...args));
+	}
+}
 
 // Log in to Discord with your client's token
 botClient.login(config.token);
