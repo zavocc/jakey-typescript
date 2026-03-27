@@ -13,10 +13,18 @@ module.exports = {
 
     // Only if the message is not ping only
     if (message.mentions.has(message.client.user) && strippedContent !== "") {
-      const response = await completion(strippedContent);
+      // typing indicator
+      await message.channel.sendTyping();
 
-      // send as message but not reply
-      await message.channel.send(response);
+      try {
+        const response = await completion(strippedContent);
+        // send as message but not reply
+        await message.channel.send(response);
+      } catch (error) {
+        console.error("Error generating response:", error);
+        await message.channel.send("Sorry, I couldn't generate a response at the moment.");
+      }
+
     }
   },
 };
