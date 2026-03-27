@@ -1,4 +1,5 @@
 const { Events } = require("discord.js");
+const { completion } = require("../lib/llm/chat/generateContent");
 
 // CommonJS export
 module.exports = {
@@ -12,9 +13,10 @@ module.exports = {
 
     // Only if the message is not ping only
     if (message.mentions.has(message.client.user) && strippedContent !== "") {
-      await message.reply({
-        content: `The user said: ${strippedContent}`,
-      });
+      const response = await completion(strippedContent);
+
+      // send as message but not reply
+      await message.channel.send(response);
     }
   },
 };
