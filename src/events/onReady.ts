@@ -1,5 +1,6 @@
 const { ActivityType, Events } = require('discord.js');
 
+// CommonJS export
 module.exports = {
 	name: Events.ClientReady,
 	once: true,

@@ -1,5 +1,4 @@
 const { Events } = require("discord.js");
-const { HELP_MESSAGE } = require("../constants");
 
 // CommonJS export
 module.exports = {
@@ -11,10 +10,10 @@ module.exports = {
     // Strip message, remove of the bot itself and trim whitespace
     const strippedContent = message.content.replace(new RegExp(`<@!?${message.client.user.id}>`, "g"), "").trim();
 
-    // Trigger help only when the bot is pinged with no other text and no attachments
-    if (message.mentions.has(message.client.user) && strippedContent === "" && message.attachments.size === 0) {
+    // Only if the message is not ping only
+    if (message.mentions.has(message.client.user) && strippedContent !== "") {
       await message.reply({
-        content: HELP_MESSAGE(message.author.id, message.client.user.username),
+        content: `The user said: ${strippedContent}`,
       });
     }
   },
