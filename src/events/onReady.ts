@@ -1,10 +1,15 @@
-import { ActivityType, Events } from "discord.js";
+import { ActivityType, Client, Events } from "discord.js";
 
 // CommonJS export
 module.exports = {
     name: Events.ClientReady,
     once: true,
-    execute(client) {
+    execute(client: Client) {
+        // check if client.user is available
+        if (!client.user) {
+            throw new Error("Client user is not available.");
+        }
+
         console.log(`Ready! Logged in as ${client.user.tag}`);
 
         // Set status

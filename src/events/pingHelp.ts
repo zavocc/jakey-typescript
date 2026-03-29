@@ -1,10 +1,10 @@
-import { Events } from "discord.js";
+import { Events, Message } from "discord.js";
 import { HELP_MESSAGE } from "../data/constants";
 
 // CommonJS export
 module.exports = {
     name: Events.MessageCreate,
-    async execute(message) {
+    async execute(message: Message) {
         if (message.author.bot) return;
         if (!message.client.user) return;
 
