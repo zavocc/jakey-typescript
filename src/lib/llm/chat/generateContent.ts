@@ -30,7 +30,7 @@ export async function completion(
     context.push(latestPromptTurn);
 
     const outputs = await generateText({
-        model: openrouter.chat('gemini-2.5-flash'),
+        model: openrouter.chat('google/gemini-2.5-flash'),
         messages: context,
         system: systemMessage,
         temperature: 1,
