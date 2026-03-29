@@ -1,7 +1,7 @@
 // Mostly taken from https://discordjs.guide/legacy/app-creation/deploying-commands
 // But with casting and other typescript-specific stuff
 
-import { REST, Routes } from "discord.js";
+import { Client, GatewayIntentBits, REST, Routes } from "discord.js";
 import { app_id, token } from "../config.json";
 import fs from "node:fs";
 import path from "node:path";
@@ -45,9 +45,30 @@ for (const folder of commandFolders) {
 // Construct and prepare an instance of the REST module
 const rest = new REST().setToken(token);
 
+async function clearGuildCommands() {
+    const client = new Client({
+        intents: [GatewayIntentBits.Guilds],
+    });
+
+    try {
+        await client.login(token);
+        await client.guilds.fetch(); // Fetch guilds to populate the cache and clear commands for each guild
+
+        for (const guildId of client.guilds.cache.keys()) {
+            await rest.put(Routes.applicationGuildCommands(app_id, guildId), {
+                body: [],
+            });
+            console.log(`Cleared guild application (/) commands for ${guildId}.`);
+        }
+    } finally {
+        client.destroy();
+    }
+}
+
 // and deploy your commands!
 (async () => {
     try {
+        await clearGuildCommands();
         await rest.put(Routes.applicationCommands(app_id), { body: [] });
         console.log("Cleared global application (/) commands.");
 

@@ -7,6 +7,8 @@ export default {
     async execute(interaction: ChatInputCommandInteraction) {
         await interaction.reply("Shutting down...");
         // Use close method to shut down the bot
-        interaction.client.destroy();
+        await interaction.client.destroy();
+        console.log("Bot has been shut down.");
+        process.exit(0);
     },
 };
