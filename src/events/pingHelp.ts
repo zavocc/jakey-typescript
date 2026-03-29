@@ -1,5 +1,5 @@
 import { Events } from "discord.js";
-import { HELP_MESSAGE } from "../constants";
+import { HELP_MESSAGE } from "../data/constants";
 
 // CommonJS export
 module.exports = {

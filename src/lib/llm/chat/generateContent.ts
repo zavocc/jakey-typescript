@@ -4,6 +4,7 @@ import { loadContext, saveContext } from './contextMemory';
 import { api_keys } from '../../../config.json';
 import { createOpenRouter } from '@openrouter/ai-sdk-provider';
 import { generateText, type ModelMessage } from 'ai';
+import { JAKEY_SYSTEM_PROMPT } from '../../../data/sysprompts';
 
 // DEBUG
 import { mkdir, writeFile } from 'fs/promises';
@@ -15,8 +16,7 @@ const openrouter = createOpenRouter({
 export async function completion(
     prompt: string,
     discord_user_id: string,
-    systemMessage?: string,
-) {
+): Promise<string> {
     // check if /src/harbour/{user_id}.json exists
     const context: ModelMessage[] = await loadContext(discord_user_id);
 
@@ -30,9 +30,14 @@ export async function completion(
     context.push(latestPromptTurn);
 
     const outputs = await generateText({
-        model: openrouter.chat('google/gemini-2.5-flash'),
+        model: openrouter.chat('google/gemini-2.5-flash', {
+            reasoning: {
+                enabled: true,
+                max_tokens: 4000
+            }
+        }),
         messages: context,
-        system: systemMessage,
+        system: JAKEY_SYSTEM_PROMPT,
         temperature: 1,
     });
 
