@@ -16,18 +16,39 @@ const openrouter = createOpenRouter({
 export async function completion(
     prompt: string,
     discord_user_id: string,
+    attachment_urls?: string[],
 ): Promise<string> {
     // check if /src/harbour/{user_id}.json exists
     const context: ModelMessage[] = await loadContext(discord_user_id);
 
     // Construct a prompt
-    const latestPromptTurn: ModelMessage = {
+    let constructedContent = [];
+
+    // Check if we have image attachments
+    if (attachment_urls && attachment_urls.length > 0) {
+        // map
+        const attachmentMessages = attachment_urls.map(url => (
+            {
+                type: "image",
+                image: url,
+            }
+        ));
+        constructedContent.push(...attachmentMessages);
+    }
+
+    // Append the user's text prompt
+    constructedContent.push({
+        type: "text",
+        text: prompt,
+    });
+
+    const constructedPrompt: ModelMessage = {
         role: 'user',
-        content: prompt,
+        content: constructedContent,
     };
 
     // Append the latest prompt to the context
-    context.push(latestPromptTurn);
+    context.push(constructedPrompt);
 
     const outputs = await generateText({
         model: openrouter.chat('google/gemini-2.5-flash', {
