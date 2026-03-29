@@ -1,7 +1,8 @@
 import { Events, Interaction, MessageFlags } from "discord.js";
 
 // CommonJS export
-// taken from: https://discordjs.guide/legacy/app-creation/handling-commands#executing-commands
+// taken from: https://discordjs.guide/legacy/app-creation/handling-commands#receiving-command-interactions
+// Needed to recieve command interactions from user, this is ran on index.ts event loading
 module.exports = {
     name: Events.InteractionCreate,
     async execute(interaction: Interaction) {
