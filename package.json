@@ -18,7 +18,8 @@
     "@ai-sdk/openai": "^3.0.48",
     "@openrouter/ai-sdk-provider": "^2.3.3",
     "ai": "^6.0.141",
-    "discord.js": "^14.25.1"
+    "discord.js": "^14.25.1",
+    "zod": "^4.3.6"
   },
   "devDependencies": {
     "@types/node": "^25.5.0",

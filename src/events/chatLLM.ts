@@ -31,10 +31,18 @@ module.exports = {
             try {
                 const response = await completion(strippedContent, userId, attachmentUrls);
                 // send as message but not reply
-                await textChannel.send(response);
+                await textChannel.send(response.text);
+
+                // DEBUG: model info
+                await textChannel.send(`-# DEBUG: Model used: ${response.model_used}`);
             } catch (error) {
-                console.error("Error generating response:", error);
-                await textChannel.send("Sorry, I couldn't generate a response at the moment.");
+                // narrows to Error type
+                if (error instanceof Error && error.message.includes("does not support file attachments")) {
+                    await textChannel.send(error.message);
+                } else {
+                    console.error("Error generating response:", error);
+                    await textChannel.send("Sorry, I couldn't generate a response at the moment.");
+                }
             }
 
         }
