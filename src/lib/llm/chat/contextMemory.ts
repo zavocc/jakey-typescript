@@ -1,35 +1,36 @@
-// functions to load and save to json
-import fs from 'fs';
-import path from 'path';
+// functions to load and save to db
+import { getDBClient } from '../../db/mongodb';
 import type { ModelMessage } from 'ai';
 
-const WORKING_CONTEXT_DIR = path.join(__dirname, '../../../harbour');
+// TODO: to be stored in config.json
+const MONGODB_DB_NAME = 'jakeyv2db';
+const MONGODB_COLLECTION_NAME = 'chat_contexts';
+
+// TODO: FIX loading and saving, because I keep getting invalid input errors when sending ModelMessage context again
 
 export async function loadContext(userId: string): Promise<ModelMessage[]> {
-    const filePath = path.join(WORKING_CONTEXT_DIR, `${userId}.json`);
-    
-    // check if file exists otherwise we return empty array
-    if (!fs.existsSync(filePath)) {
-        return [];
-    }
-
-    const fileContent = await fs.promises.readFile(filePath, 'utf-8');
     try {
-        const context = JSON.parse(fileContent) as ModelMessage[];
-        return context;
+        const db = await getDBClient();
+        const collection = db.db(MONGODB_DB_NAME).collection(MONGODB_COLLECTION_NAME);
+        const context = await collection.findOne({ userId });
+        return context?.messages || [];
     } catch (error) {
         console.error(`Error parsing context for user ${userId}:`, error);
-        return [];
+        throw new Error(`Failed to load context for user ${userId}.`);
     }
 }
 
 export async function saveContext(userId: string, context: ModelMessage[]): Promise<void> {
-    const filePath = path.join(WORKING_CONTEXT_DIR, `${userId}.json`);
     try {
-        await fs.promises.mkdir(WORKING_CONTEXT_DIR, { recursive: true });
-        const stringifiedContent = JSON.stringify(context, null, 2);
-        await fs.promises.writeFile(filePath, stringifiedContent, 'utf-8');
+        const db = await getDBClient();
+        const collection = db.db(MONGODB_DB_NAME).collection(MONGODB_COLLECTION_NAME);
+        await collection.updateOne(
+            { userId },
+            { $set: { messages: context } },
+            { upsert: true }
+        );
     } catch (error) {
         console.error(`Error saving context for user ${userId}:`, error);
+        throw new Error(`Failed to save context for user ${userId}.`);
     }
 }

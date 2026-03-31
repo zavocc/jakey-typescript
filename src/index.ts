@@ -11,6 +11,9 @@ import {
 import fs from "fs";
 import path from "path";
 
+// TODO: to centralize services
+import { connectDB } from "./lib/db/mongodb";
+
 const validatedConfig = validateOrThrow("config.json", ConfigSchema, config);
 
 // Create a new client instance
@@ -63,5 +66,13 @@ for (const file of eventFiles) {
     }
 }
 
-// Log in to Discord with your client's token
-botClient.login(validatedConfig.token);
+// Start services and log in
+async function bootstrap() {
+    await connectDB();
+    await botClient.login(validatedConfig.token);
+}
+
+bootstrap().catch((error) => {
+    console.error("Startup failed:", error);
+    process.exit(1);
+});

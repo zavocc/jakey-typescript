@@ -7,4 +7,10 @@
 - [ ] model choice
     - [ ] `/model set` with autocomplete
     - [ ] populate more models in ./src/data/models.json
-- [ ] mongodb
+- [x] mongodb
+    it works as of 3/31/2026... connection
+    - [ ] make sure loading and saving works
+        - [ ] 3/31/2026: contextMemory implemented from json to mongodb of saving and loading context, saving it works but loading fails as it gives me invalid  input of ModelMessages in generateText messages parameter
+    - [ ] centralize mongodb from lib/db as a service in lib/services with standardized functions
+
+and most importantly, find and resolve //TODOs

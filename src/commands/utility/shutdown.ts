@@ -1,4 +1,5 @@
 import { ChatInputCommandInteraction, SlashCommandBuilder } from "discord.js";
+import { closeDB } from "../../lib/db/mongodb";
 
 export default {
     data: new SlashCommandBuilder()
@@ -9,6 +10,9 @@ export default {
         // Use close method to shut down the bot
         await interaction.client.destroy();
         console.log("Bot has been shut down.");
+        // Close DB connection if open
+        // TODO: To centralize services
+        await closeDB();
         process.exit(0);
     },
 };

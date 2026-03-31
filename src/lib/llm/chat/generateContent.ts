@@ -17,16 +17,11 @@ const openrouter = createOpenRouter({
     apiKey: api_keys.openrouter,
 });
 
-type DiscordCompletionResponse = {
-    text: string;
-    model_used: string;
-};
-
 export async function completion(
     prompt: string,
     discord_user_id: string,
     attachment_urls?: string[],
-): Promise<DiscordCompletionResponse> {
+): Promise<{text: string; model_used: string; }> {
     // check if /src/harbour/{user_id}.json exists
     const context: ModelMessage[] = await loadContext(discord_user_id);
 
@@ -69,7 +64,7 @@ export async function completion(
         model: openrouter.chat(modelProps.model_id, {
             reasoning: {
                 enabled: true,
-                max_tokens: 16000,
+                max_tokens: 4000,
             },
         }),
         messages: context,

@@ -22,8 +22,13 @@ module.exports = {
 
         // Trigger in DMs directly, or in guilds only when the bot is mentioned
         if ((isDM || isMentionInGuild) && (strippedContent !== "" || message.attachments.size > 0)) {
-            // typing indicator
+            // Keep typing alive for long LLM calls (Discord clears it after a short timeout).
             await textChannel.sendTyping();
+            const typingInterval = setInterval(() => {
+                void textChannel.sendTyping().catch((typingError) => {
+                    console.error("Failed to refresh typing indicator:", typingError);
+                });
+            }, 8000);
 
             // Check if the message has attachments and get their URLs
             const attachmentUrls = message.attachments.map(attachment => attachment.url);
@@ -43,6 +48,8 @@ module.exports = {
                     console.error("Error generating response:", error);
                     await textChannel.send("Sorry, I couldn't generate a response at the moment.");
                 }
+            } finally {
+                clearInterval(typingInterval);
             }
 
         }
