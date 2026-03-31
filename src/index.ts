@@ -1,5 +1,6 @@
 // import token from config.json
 import config from "./config.json";
+import { ConfigSchema, validateOrThrow } from "./types/schemas";
 
 import {
     Client,
@@ -9,6 +10,8 @@ import {
 } from "discord.js";
 import fs from "fs";
 import path from "path";
+
+const validatedConfig = validateOrThrow("config.json", ConfigSchema, config);
 
 // Create a new client instance
 const botClient: Client = new Client({
@@ -61,4 +64,4 @@ for (const file of eventFiles) {
 }
 
 // Log in to Discord with your client's token
-botClient.login(config.token);
+botClient.login(validatedConfig.token);

@@ -3,7 +3,7 @@ import { loadContext, saveContext } from './contextMemory';
 
 // models
 import type { ModelProps } from '../../../types/schemas';
-import { models } from '../../../data/models.json';
+import { models } from '../../../models.json';
 
 import { api_keys } from '../../../config.json';
 import { createOpenRouter } from '@openrouter/ai-sdk-provider';
