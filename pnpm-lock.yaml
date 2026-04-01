@@ -13,10 +13,13 @@ importers:
         version: 3.0.48(zod@4.3.6)
       '@openrouter/ai-sdk-provider':
         specifier: ^2.3.3
-        version: 2.3.3(ai@6.0.141(zod@4.3.6))(zod@4.3.6)
+        version: 2.3.3(ai@6.0.142(zod@4.3.6))(zod@4.3.6)
+      '@openrouter/sdk':
+        specifier: ^0.10.2
+        version: 0.10.2
       ai:
-        specifier: ^6.0.141
-        version: 6.0.141(zod@4.3.6)
+        specifier: ^6.0.142
+        version: 6.0.142(zod@4.3.6)
       discord.js:
         specifier: ^14.25.1
         version: 14.25.1
@@ -39,8 +42,8 @@ importers:
 
 packages:
 
-  '@ai-sdk/gateway@3.0.83':
-    resolution: {integrity: sha512-LvlWujbSdEkTBXBLFtF7GS6riXdHhH0O+DpDrCaNQvXeHmSF2jKsOg7JWXiCgygAHM5cWFAO3JYmZp83DjiuBQ==}
+  '@ai-sdk/gateway@3.0.84':
+    resolution: {integrity: sha512-RnUw6UNvkaw9MEaJU9cIjA+WBP+ZR5+M/9nfbfJHcGKtTbcWXijJuYKx9nYRnm+qU+iiakb0XvQA/vvho6lTsw==}
     engines: {node: '>=18'}
     peerDependencies:
       zod: ^3.25.76 || ^4.1.8
@@ -255,6 +258,9 @@ packages:
       ai: ^6.0.0
       zod: ^3.25.0 || ^4.0.0
 
+  '@openrouter/sdk@0.10.2':
+    resolution: {integrity: sha512-od0aWkk+vhndEI78YyPvPgMxv2+32KO4MRrk8lFxro/YABKAHkozXugc+x3YeNf/d9KQaBO6M4Rut1uf+yeD2g==}
+
   '@opentelemetry/api@1.9.0':
     resolution: {integrity: sha512-3giAOQvZiH5F9bMlMiv8+GSPMeqg0dbaeo58/0SlA9sxSqZhnUtxzX9/2FzyhS9sWQf5S0GJE0AKBrFqjpeYcg==}
     engines: {node: '>=8.0.0'}
@@ -298,8 +304,8 @@ packages:
     resolution: {integrity: sha512-Xfe6rpCTxSxfbswi/W/Pz7zp1WWSNn4A0eW4mLkQUewCrXXtMj31lCg+iQyTkh/CkusZSq9eDflu7tjEDXUY6g==}
     engines: {node: '>=v14.0.0', npm: '>=7.0.0'}
 
-  ai@6.0.141:
-    resolution: {integrity: sha512-+GomGQWaId3xN0wcugUW/H7xMMaFkID2PiS7K/Wugj45G3efv0BXhQ3psRZoQVoRbOpdNoUqcK/KTB+FR4h6qg==}
+  ai@6.0.142:
+    resolution: {integrity: sha512-ZoxAsnTL/dFg5WdcwC8QNhKVlLtqwwT3I7p/4i8IJJP+6ZwqF1ljuwMsAsPYYvppZ+RzUxjxxFGb1cbEhNH3dg==}
     engines: {node: '>=18'}
     peerDependencies:
       zod: ^3.25.76 || ^4.1.8
@@ -447,7 +453,7 @@ packages:
 
 snapshots:
 
-  '@ai-sdk/gateway@3.0.83(zod@4.3.6)':
+  '@ai-sdk/gateway@3.0.84(zod@4.3.6)':
     dependencies:
       '@ai-sdk/provider': 3.0.8
       '@ai-sdk/provider-utils': 4.0.21(zod@4.3.6)
@@ -602,9 +608,13 @@ snapshots:
     dependencies:
       sparse-bitfield: 3.0.3
 
-  '@openrouter/ai-sdk-provider@2.3.3(ai@6.0.141(zod@4.3.6))(zod@4.3.6)':
+  '@openrouter/ai-sdk-provider@2.3.3(ai@6.0.142(zod@4.3.6))(zod@4.3.6)':
     dependencies:
-      ai: 6.0.141(zod@4.3.6)
+      ai: 6.0.142(zod@4.3.6)
+      zod: 4.3.6
+
+  '@openrouter/sdk@0.10.2':
+    dependencies:
       zod: 4.3.6
 
   '@opentelemetry/api@1.9.0': {}
@@ -640,9 +650,9 @@ snapshots:
 
   '@vladfrangu/async_event_emitter@2.4.7': {}
 
-  ai@6.0.141(zod@4.3.6):
+  ai@6.0.142(zod@4.3.6):
     dependencies:
-      '@ai-sdk/gateway': 3.0.83(zod@4.3.6)
+      '@ai-sdk/gateway': 3.0.84(zod@4.3.6)
       '@ai-sdk/provider': 3.0.8
       '@ai-sdk/provider-utils': 4.0.21(zod@4.3.6)
       '@opentelemetry/api': 1.9.0

@@ -8,7 +8,7 @@ const MONGODB_COLLECTION_NAME = 'chat_contexts';
 
 // TODO: FIX loading and saving, because I keep getting invalid input errors when sending ModelMessage context again
 
-export async function loadContext(userId: string): Promise<ModelMessage[]> {
+export async function loadContext(userId: string) {
     try {
         const db = await getDBClient();
         const collection = db.db(MONGODB_DB_NAME).collection(MONGODB_COLLECTION_NAME);

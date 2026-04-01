@@ -1,8 +1,8 @@
 {
     "models": [
         {
-            "model_id": "google/gemini-3-flash-preview",
-            "model_friendly_name": "Gemini 3 Flash (Preview)",
+            "model_id": "qwen/qwen3.6-plus-preview:free",
+            "model_friendly_name": "Qwen 3.6 Plus Preview (Free)",
             "enable_files": true,
             "enable_tools": true
         }
