@@ -80,7 +80,7 @@ export async function completion(
       messages: context,
       stream: false,
       reasoning: {
-        effort: 'medium',
+        effort: 'low',
       },
       temperature: 1
     }

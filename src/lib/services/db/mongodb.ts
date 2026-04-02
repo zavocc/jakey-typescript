@@ -1,4 +1,4 @@
-import { MongoClient } from "mongodb";
+import { MongoClient, type Db } from "mongodb";
 import { db } from "../../../config.json";
 
 // Create a MongoClient with a MongoClientOptions object to set the Stable API version
@@ -18,7 +18,7 @@ export async function startDB(): Promise<void> {
 }
 
 // return the client for performing db operations
-export async function getDBClient(): Promise<MongoClient> {
+export async function getDB(): Promise<Db> {
   if (!(client instanceof MongoClient)) {
     throw new Error("Invalid MongoDB client instance.");
   }
@@ -27,7 +27,13 @@ export async function getDBClient(): Promise<MongoClient> {
     throw new Error("MongoDB client is not connected. Please call startDB() first.");
   }
 
-  return client;
+  // check if we have db.mongodb_db_name in config
+  if (!db.mongodb_db_name) {
+    throw new Error("Missing 'mongodb_db_name' in config.json.");
+  }
+
+  const dataBased = client.db(db.mongodb_db_name);
+  return dataBased;
 }
 
 // close

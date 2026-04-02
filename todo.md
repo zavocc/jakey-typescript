@@ -9,10 +9,12 @@
     - [ ] populate more models in ./src/data/models.json
 - [x] mongodb
     it works as of 3/31/2026... connection
-    - [ ] make sure loading and saving works
+    - [x] make sure loading and saving works
         - [ ] 3/31/2026: contextMemory implemented from json to mongodb of saving and loading context, saving it works but loading fails as it gives me invalid  input of ModelMessages in generateText messages parameter
             PROPOSED FIX: Remove providerOptions metadata OR switch to OpenRouter/OpenAI API
-    - [ ] centralize mongodb from lib/db as a service in lib/services with standardized functions
+        - [x] 4/2/2026: For now we use OpenRouter SDK
+    - [x] centralize mongodb from lib/db as a service in lib/services with standardized functions
+        4/2/2026: Implemented in ./src/lib/services/db/mongodb.ts and we have services.ts
 
 - [ ] instead of importing models.json, we open it every time for autocomplete
 

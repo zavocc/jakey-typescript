@@ -1,17 +1,15 @@
 // functions to load and save to db
-import { getDBClient } from '../../db/mongodb';
-import type { ModelMessage } from 'ai';
-
-// TODO: to be stored in config.json
-const MONGODB_DB_NAME = 'jakeyv2db';
+import { getDB } from '../../services/db/mongodb';
 const MONGODB_COLLECTION_NAME = 'chat_contexts';
 
-// TODO: FIX loading and saving, because I keep getting invalid input errors when sending ModelMessage context again
+async function getContextCollection() {
+  const db = await getDB();
+  return db.collection(MONGODB_COLLECTION_NAME);
+}
 
 export async function loadContext(userId: string) {
   try {
-    const db = await getDBClient();
-    const collection = db.db(MONGODB_DB_NAME).collection(MONGODB_COLLECTION_NAME);
+    const collection = await getContextCollection();
     const context = await collection.findOne({ userId });
     return context?.messages || [];
   } catch (error) {
@@ -20,10 +18,9 @@ export async function loadContext(userId: string) {
   }
 }
 
-export async function saveContext(userId: string, context: ModelMessage[]): Promise<void> {
+export async function saveContext(userId: string, context: Array<any>): Promise<void> {
   try {
-    const db = await getDBClient();
-    const collection = db.db(MONGODB_DB_NAME).collection(MONGODB_COLLECTION_NAME);
+    const collection = await getContextCollection();
     await collection.updateOne(
       { userId },
       { $set: { messages: context } },
@@ -34,3 +31,9 @@ export async function saveContext(userId: string, context: ModelMessage[]): Prom
     throw new Error(`Failed to save context for user ${userId}.`);
   }
 }
+
+export async function clearContext(userId: string): Promise<void> {
+  const collection = await getContextCollection();
+  await collection.deleteOne({ userId });
+}
+

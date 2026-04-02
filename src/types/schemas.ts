@@ -17,7 +17,8 @@ export const ConfigSchema = z.object({
     openrouter: z.string()
   }),
   db: z.object({
-    mongodb: z.string()
+    mongodb: z.string(),
+    mongodb_db_name: z.string()
   })
 });
 
