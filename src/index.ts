@@ -3,28 +3,28 @@ import config from "./config.json";
 import { ConfigSchema, validateOrThrow } from "./types/schemas";
 
 import {
-    Client,
-    Collection,
-    GatewayIntentBits,
-    Partials,
+  Client,
+  Collection,
+  GatewayIntentBits,
+  Partials,
 } from "discord.js";
 import fs from "fs";
 import path from "path";
 
-// TODO: to centralize services
-import { connectDB } from "./lib/db/mongodb";
+// TODO: to polish
+import { startServices } from "./lib/services/services";
 
 const validatedConfig = validateOrThrow("config.json", ConfigSchema, config);
 
 // Create a new client instance
 const botClient: Client = new Client({
-    intents: [
-        GatewayIntentBits.Guilds,
-        GatewayIntentBits.GuildMessages,
-        GatewayIntentBits.MessageContent,
-        GatewayIntentBits.DirectMessages
-    ],
-    partials: [Partials.Channel],
+  intents: [
+    GatewayIntentBits.Guilds,
+    GatewayIntentBits.GuildMessages,
+    GatewayIntentBits.MessageContent,
+    GatewayIntentBits.DirectMessages
+  ],
+  partials: [Partials.Channel],
 });
 
 // Register commands
@@ -34,45 +34,45 @@ const foldersPath = path.join(__dirname, "commands");
 const commandFolders = fs.readdirSync(foldersPath);
 
 for (const folder of commandFolders) {
-    const commandsPath = path.join(foldersPath, folder);
-    const commandFiles = fs
-        .readdirSync(commandsPath)
-        .filter((file) => file.endsWith(".ts"));
-    for (const file of commandFiles) {
-        const filePath = path.join(commandsPath, file);
-        const loaded = require(filePath);
-        const command = loaded.default ?? loaded;
-        // Set a new item in the Collection with the key as the command name and the value as the exported module
-        if ("data" in command && "execute" in command) {
-            botClient.commands.set(command.data.name, command);
-        } else {
-            console.log(
-                `[WARNING] The command at ${filePath} is missing a required "data" or "execute" property.`,
-            );
-        }
+  const commandsPath = path.join(foldersPath, folder);
+  const commandFiles = fs
+    .readdirSync(commandsPath)
+    .filter((file) => file.endsWith(".ts"));
+  for (const file of commandFiles) {
+    const filePath = path.join(commandsPath, file);
+    const loaded = require(filePath);
+    const command = loaded.default ?? loaded;
+    // Set a new item in the Collection with the key as the command name and the value as the exported module
+    if ("data" in command && "execute" in command) {
+      botClient.commands.set(command.data.name, command);
+    } else {
+      console.log(
+        `[WARNING] The command at ${filePath} is missing a required "data" or "execute" property.`,
+      );
     }
+  }
 }
 
 // load events
 const eventsPath = path.join(__dirname, 'events');
 const eventFiles = fs.readdirSync(eventsPath).filter((file) => file.endsWith('.ts'));
 for (const file of eventFiles) {
-    const filePath = path.join(eventsPath, file);
-    const event  = require(filePath); // Requires CJS as ESM imports require async, which Discord.JS top level does not support yet
-    if (event.once) {
-        botClient.once(event.name, (...args) => event.execute(...args));
-    } else {
-        botClient.on(event.name, (...args) => event.execute(...args));
-    }
+  const filePath = path.join(eventsPath, file);
+  const event = require(filePath); // Requires CJS as ESM imports require async, which Discord.JS top level does not support yet
+  if (event.once) {
+    botClient.once(event.name, (...args) => event.execute(...args));
+  } else {
+    botClient.on(event.name, (...args) => event.execute(...args));
+  }
 }
 
 // Start services and log in
 async function bootstrap() {
-    await connectDB();
-    await botClient.login(validatedConfig.token);
+  await startServices();
+  await botClient.login(validatedConfig.token);
 }
 
 bootstrap().catch((error) => {
-    console.error("Startup failed:", error);
-    process.exit(1);
+  console.error("Startup failed:", error);
+  process.exit(1);
 });

@@ -1,12 +1,12 @@
 import { MongoClient } from "mongodb";
-import { db } from "../../config.json";
+import { db } from "../../../config.json";
 
 // Create a MongoClient with a MongoClientOptions object to set the Stable API version
 const client = new MongoClient(db.mongodb);
 let isConnected = false;
 
 // connect to db
-export async function connectDB(): Promise<void> {
+export async function startDB(): Promise<void> {
   if (isConnected) {
     return;
   }
@@ -24,14 +24,14 @@ export async function getDBClient(): Promise<MongoClient> {
   }
 
   if (!isConnected) {
-    await connectDB();
+    throw new Error("MongoDB client is not connected. Please call startDB() first.");
   }
 
   return client;
 }
 
 // close
-export async function closeDB(): Promise<void> {
+export async function stopDB(): Promise<void> {
   await client.close();
   isConnected = false;
   console.log("MongoDB connection closed.");
