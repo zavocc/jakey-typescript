@@ -1,8 +1,13 @@
-import { ChatInputCommandInteraction, Collection } from "discord.js";
+import {
+  AutocompleteInteraction,
+  ChatInputCommandInteraction,
+  Collection,
+} from "discord.js";
 
 type BotCommand = {
   data: { name: string };
   execute: (interaction: ChatInputCommandInteraction) => Promise<void>;
+  autocomplete?: (interaction: AutocompleteInteraction) => Promise<void>;
 };
 
 // This tells TypeScript that Client extends with a `commands` property of type `Collection<string, BotCommand>`

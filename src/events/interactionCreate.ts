@@ -6,6 +6,22 @@ import { Events, Interaction, MessageFlags } from "discord.js";
 module.exports = {
   name: Events.InteractionCreate,
   async execute(interaction: Interaction) {
+    if (interaction.isAutocomplete()) {
+      const command = interaction.client.commands.get(interaction.commandName);
+      if (!command?.autocomplete) {
+        console.error(`No autocomplete handler for ${interaction.commandName} was found.`);
+        return;
+      }
+
+      try {
+        await command.autocomplete(interaction);
+      } catch (error) {
+        console.error(error);
+      }
+
+      return;
+    }
+
     if (!interaction.isChatInputCommand()) return;
 
     const command = interaction.client.commands.get(interaction.commandName);

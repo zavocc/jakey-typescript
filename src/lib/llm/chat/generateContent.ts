@@ -1,9 +1,9 @@
 // context
 import { loadContext, saveContext } from './contextMemory';
+import { getModelProps } from './modelsSelection';
 
 // models
 import type { ModelProps } from '../../../types/schemas';
-import { models } from '../../../models.json';
 
 import { api_keys } from '../../../config.json';
 import { JAKEY_SYSTEM_PROMPT } from '../../../data/sysprompts';
@@ -39,8 +39,7 @@ export async function completion(
 
   // Parse model properties from the JSON file
   // Only choose 1 for now, validation later
-  const modelProps: ModelProps = models[0];
-
+  const modelProps: ModelProps = await getModelProps(discord_user_id);
   // Construct a prompt
   const constructedContent = [];
 
@@ -48,7 +47,7 @@ export async function completion(
   if (attachment_urls && attachment_urls.length > 0) {
     // throw an error if the model doesn't support files
     if (!modelProps.enable_files) {
-      throw new Error(`The model **${modelProps.model_friendly_name}** does not support file attachments.`);
+      throw new Error(`The model **${modelProps.model_alias}** does not support file attachments.`);
     }
 
     const attachmentMessages = attachment_urls.map((url) => ({
@@ -74,14 +73,18 @@ export async function completion(
   // Append the latest prompt to the context
   context.push(constructedPrompt);
 
+  let additionalParams;
+  // Pass additional params if existed
+  if (modelProps.additional_properties) {
+    additionalParams = modelProps.additional_properties;
+  }
+
   const outputs = await openrouter.chat.send({
     chatGenerationParams: {
+      ...additionalParams,
       model: modelProps.model_id,
       messages: context,
       stream: false,
-      reasoning: {
-        effort: 'low',
-      },
       temperature: 1
     }
   })
