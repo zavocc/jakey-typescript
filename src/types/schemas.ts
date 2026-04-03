@@ -1,9 +1,15 @@
 import { z } from "zod";
 
+// for preferences
+export const PreferencesSchema = z.object({
+  user_choice_model_alias: z.string(),
+  user_choice_tool: z.string().optional()
+});
+
 // models.json
 export const ModelPropsSchema = z.object({
   model_id: z.string(),
-  model_friendly_name: z.string(),
+  model_alias: z.string(),
   enable_files: z.boolean(),
   enable_tools: z.boolean(),
   additional_properties: z.record(z.string(), z.unknown()).optional()
