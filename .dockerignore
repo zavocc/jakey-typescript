@@ -1,0 +1,7 @@
+.git
+.vscode
+.codex
+dist
+node_modules
+src/config.json
+todo.md
