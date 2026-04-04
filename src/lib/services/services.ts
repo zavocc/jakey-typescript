@@ -1,4 +1,4 @@
-import { startDB, stopDB } from "./db/mongodb";
+import { startDB, stopDB } from "./mongodb";
 
 export async function startServices(): Promise<void> {
   // database

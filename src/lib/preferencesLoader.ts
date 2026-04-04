@@ -1,7 +1,7 @@
 // pulls preferences and other data from the database
 import { z } from "zod";
 import { PreferencesSchema } from "../types/schemas";
-import { getDB } from "./services/db/mongodb";
+import { getDB } from "./services/mongodb";
 
 const MONGODB_COLLECTION_NAME = "discord_user_preferences";
 type Preferences = z.infer<typeof PreferencesSchema>;

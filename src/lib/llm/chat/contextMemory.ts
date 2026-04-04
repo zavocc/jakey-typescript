@@ -1,5 +1,5 @@
 // functions to load and save to db
-import { getDB } from '../../services/db/mongodb';
+import { getDB } from '../../services/mongodb';
 const MONGODB_COLLECTION_NAME = 'chat_contexts';
 const DEFAULT_THREAD_NAME = 'default';
 
