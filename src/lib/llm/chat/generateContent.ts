@@ -22,7 +22,12 @@ export async function completion(
   discord_user_id: string,
   attachment_urls?: string[],
 ): Promise<{ text: string; model_used: string; }> {
-  const context = await loadContext(discord_user_id);
+  // Parse model properties from the JSON file
+  // Only choose 1 for now, validation later
+  const modelProps: ModelProps = await getModelProps(discord_user_id);
+
+  // Load context and it's associated thread if existed
+  const context = await loadContext(discord_user_id, modelProps.thread_name);
 
   // If context is empty, put system prompt
   if (context.length === 0) {
@@ -37,9 +42,7 @@ export async function completion(
     });
   }
 
-  // Parse model properties from the JSON file
-  // Only choose 1 for now, validation later
-  const modelProps: ModelProps = await getModelProps(discord_user_id);
+
   // Construct a prompt
   const constructedContent = [];
 
@@ -98,7 +101,7 @@ export async function completion(
   context.push(outputs.choices[0].message);
 
   // save the updated context
-  await saveContext(discord_user_id, context);
+  await saveContext(discord_user_id, context, modelProps.thread_name);
 
   // return the assistant's response and model information
   return {
