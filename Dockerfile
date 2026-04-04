@@ -3,13 +3,13 @@ ENV PNPM_HOME="/pnpm"
 ENV PATH="$PNPM_HOME:$PATH"
 RUN corepack enable
 
-# Create user jakeybot with UID 1000, and directory /jakeybot
-RUN useradd -u 1000 -m -d /jakeybot jakeybot
+# Create user jakeybot with UID 6767, and directory /jakeybot
+RUN useradd -u 6767 -m -d /jakeybot jakeybot
 USER jakeybot
 
 # Set the working directory to /jakeybot and copy the project files there
 WORKDIR /jakeybot
-COPY --chown=1000:1000 . /jakeybot
+COPY --chown=6767:6767 . /jakeybot
 
 # Install production deps, separate from building process
 FROM base AS prod-deps
