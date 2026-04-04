@@ -8,7 +8,7 @@
 - [ ] better logging, especially in lib/services
 
 - [ ] separate generateContent.ts as a sole utility functions that takes prompt, file inputs, and possibly messages array
-- [ ] agentic interface and multi-part multimodal outputs must be in separate files e.g. llmAgenticReciever.ts where functions can take Discord.JS's Interaction (type `ChatInputCommandInteraction`) object as parameter
+- [ ] agentic interface and multi-part multimodal outputs must be in separate files e.g. llmAgenticReciever.ts where functions can take Discord.JS's Interaction (type `ChatInputCommandInteraction`) object as parameter so the agentic reciever function can still send messages or perform actions like react message
     - [ ] the chatLLM.ts event also focus more on showing agentic tools and multimodal result
         call chain are: User -> chatLLM.ts -> AgenticReciever -> generateContent.ts -> Report back to agenticReciever and send message text or perform tool call loops -> Send message back to chatLLM.ts
 
