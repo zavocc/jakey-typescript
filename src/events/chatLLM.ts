@@ -8,6 +8,13 @@ module.exports = {
     if (message.author.bot) return; // Ignore messages from bots
     if (!message.client.user) return; // check if the bot's user is available
     if (!message.channel?.isSendable()) return; // type-guard for channel and check if it's sendable
+
+    // If the user is not owner, send a message and throw an error
+    if (!message.client.application?.owner){
+      await message.reply("You do not have access to use this bot.");
+      throw new Error("Unauthorized access attempt by user ID: " + message.author.id);
+    }
+
     const textChannel = message.channel; // Preserve narrowed sendable channel type for later send/sendTyping calls
 
     // Get user ID for chat context
