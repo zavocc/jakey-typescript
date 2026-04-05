@@ -1,9 +1,25 @@
 ## current goal: tools, agentic interfaces, and DB
 - [x] validation schema of model lists in ./src/types/schemas.ts using zod 
-    - [ ] chat history per provider
+    - [x] chat history per provider
 - [ ] tool use
-    - [ ] builtin tools
-    - [ ] pass discord context and bot to functions
+    - [x] builtin tools
+    - [x] pass discord context and bot to functions
+    - [ ] more structured polish of how tools are organized (builtin vs apis), gatherer central maybe?
+    AS OF 4/5/2026: THIS WORKS WITH FULL Message.channel.send BUT half-baked, only few set of built in tools that cannot be disabled    
+    And it's only built-in, but enable_tools toggle works
+    - [ ] Send all possible content (text, image) from toolHasFinished loop accessing response.modelResponse content and send it to Discord UI from the chatAgenticReciever, and also avoid dups, we need to make sure loop logic is handled correctly
+    - [ ] /tools set command
+
+Also
+Avoid DRY code of this snippet:
+```
+const messageChannel: SendableChannels | null = discord_interaction.channel?.isSendable() ? discord_interaction.channel : null;
+  if (!messageChannel) {
+    throw new Error("Message channel is not available.");
+  }
+```
+as currently the test tools have these code separately
+
 - [ ] mongodb indexing
 - [ ] better logging, especially in lib/services
 
