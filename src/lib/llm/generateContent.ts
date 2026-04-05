@@ -1,14 +1,6 @@
-// context
-import { loadContext, saveContext } from './contextMemory';
-import { getModelProps } from './modelsSelection';
-
-// models
-import type { ModelProps } from '../../../types/schemas';
-
-import { api_keys } from '../../../config.json';
-import { JAKEY_SYSTEM_PROMPT } from '../../../data/sysprompts';
-
+import { api_keys } from '../../config.json';
 import { OpenRouter } from '@openrouter/sdk';
+import type { AssistantMessage } from '@openrouter/sdk/models';
 
 // DEBUG
 import { mkdir, writeFile } from 'fs/promises';
@@ -17,26 +9,31 @@ const openrouter = new OpenRouter({
   apiKey: api_keys.openrouter,
 });
 
-export async function completion(
+type OutputShape = {
+  modelResponse: AssistantMessage,
+  model_used: string,
+}
+
+export async function text_completion(
+  model: string,
   prompt: string,
-  discord_user_id: string,
+  system_prompt?: string,
   attachment_urls?: string[],
-): Promise<{ text: string; model_used: string; }> {
+  messages_context?: Array<any>,
+  additional_properties?: Record<string, any>,
+): Promise<OutputShape> {
   // Parse model properties from the JSON file
   // Only choose 1 for now, validation later
-  const modelProps: ModelProps = await getModelProps(discord_user_id);
-
-  // Load context and it's associated thread if existed
-  const context = await loadContext(discord_user_id, modelProps.thread_name);
+  let context = messages_context || [];
 
   // If context is empty, put system prompt
-  if (context.length === 0) {
+  if ((context.length === 0) && system_prompt) {
     context.push({
       role: 'system',
       content: [
         {
           type: 'text',
-          text: JAKEY_SYSTEM_PROMPT,
+          text: system_prompt,
         }
       ],
     });
@@ -48,11 +45,6 @@ export async function completion(
 
   // Check if we have image attachments and is enabled
   if (attachment_urls && attachment_urls.length > 0) {
-    // throw an error if the model doesn't support files
-    if (!modelProps.enable_files) {
-      throw new Error(`The model **${modelProps.model_alias}** does not support file attachments.`);
-    }
-
     const attachmentMessages = attachment_urls.map((url) => ({
       type: 'image_url',
       imageUrl: {
@@ -78,14 +70,14 @@ export async function completion(
 
   let additionalParams;
   // Pass additional params if existed
-  if (modelProps.additional_properties) {
-    additionalParams = modelProps.additional_properties;
+  if (additional_properties) {
+    additionalParams = additional_properties;
   }
 
   const outputs = await openrouter.chat.send({
     chatGenerationParams: {
       ...additionalParams,
-      model: modelProps.model_id,
+      model: model,
       messages: context,
       stream: false,
       temperature: 1
@@ -95,17 +87,10 @@ export async function completion(
   // Log possible outputs
   const debugDir = `${__dirname}/../../../harbour/debug`;
   await mkdir(debugDir, { recursive: true });
-  await writeFile(`${debugDir}/${discord_user_id}.json`, JSON.stringify(outputs, null, 2));
+  await writeFile(`${debugDir}/debug.json`, JSON.stringify(outputs, null, 2));
 
-  // Append the assistant's response to the context
-  context.push(outputs.choices[0].message);
-
-  // save the updated context
-  await saveContext(discord_user_id, context, modelProps.thread_name);
-
-  // return the assistant's response and model information
   return {
-    text: outputs.choices[0].message.content,
-    model_used: outputs.model,
+    modelResponse: outputs.choices[0].message,
+    model_used: outputs.model
   };
 }

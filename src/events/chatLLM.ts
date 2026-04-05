@@ -1,5 +1,5 @@
 import { Events, Message } from "discord.js";
-import { completion } from "../lib/llm/chat/generateContent";
+import { chatToLLM } from "../lib/llm/chat/chatAgenticReciever";
 
 // CommonJS export
 module.exports = {
@@ -34,12 +34,7 @@ module.exports = {
       const attachmentUrls = message.attachments.map(attachment => attachment.url);
 
       try {
-        const response = await completion(strippedContent, userId, attachmentUrls);
-        // send as message but not reply
-        await textChannel.send(response.text);
-
-        // DEBUG: model info
-        await textChannel.send(`-# DEBUG: Model used: ${response.model_used}`);
+        await chatToLLM(strippedContent, userId, message, attachmentUrls);
       } catch (error) {
         // narrows to Error type
         if (error instanceof Error && error.message.includes("does not support file attachments")) {

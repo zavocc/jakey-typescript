@@ -2,6 +2,7 @@ import { savePreferences } from "../../lib/preferencesLoader";
 import {
   AutocompleteInteraction,
   ChatInputCommandInteraction,
+  MessageFlags,
   SlashCommandBuilder,
   SlashCommandSubcommandBuilder,
 } from "discord.js";
@@ -64,12 +65,14 @@ export default {
       const selectedModelAlias = interaction.options.getString("model_name", true);
 
       console.log(`Selected model alias: ${selectedModelAlias}`);
+
+      // Defer
+      await interaction.deferReply({ flags: MessageFlags.Ephemeral });
+
       await savePreferences(interaction.user.id, "user_choice_model_alias", selectedModelAlias);
 
-      await interaction.reply({
-        content: `Model set to: ${selectedModelAlias}`,
-        ephemeral: true,
-      });
+      // Done
+      await interaction.editReply({content: `Model set to: ${selectedModelAlias}`});
     }
   }
 };
