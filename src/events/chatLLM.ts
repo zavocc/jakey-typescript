@@ -1,5 +1,5 @@
 import { Events, Message } from "discord.js";
-import { chatToLLM } from "../lib/llm/chat/chatAgenticReciever";
+import { chatToLLM } from "../lib/llm/chat/chatAgenticReceiver";
 
 // CommonJS export
 module.exports = {
