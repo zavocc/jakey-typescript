@@ -1,7 +1,7 @@
 dist/
 node_modules/
 src/config.json
-src/harbour
+**/harbour/*
 package-lock.json
 .codex
 .env.development
