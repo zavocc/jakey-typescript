@@ -33,6 +33,7 @@ async function loadPreferences<K extends PreferenceKey>(userId: string, prefName
     return (result[prefName] ?? null) as Preferences[K] | null;
 }
 
+// extend from PreferenceKey so typescript won't complain
 async function savePreferences<K extends PreferenceKey>(userId: string, prefName: K, data: Preferences[K]): Promise<void> {
     // Defensive check in case key comes from unchecked/casted input
     if (!isPreferenceKey(prefName)) {
