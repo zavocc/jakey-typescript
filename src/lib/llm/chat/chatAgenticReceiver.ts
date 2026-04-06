@@ -92,7 +92,7 @@ export async function chatToLLM(
       // Rerun
       response = await text_completion(
         modelProps.model_id,
-        "Continue based on the tool results.",
+        undefined,
         JAKEY_SYSTEM_PROMPT,
         undefined,
         context,
