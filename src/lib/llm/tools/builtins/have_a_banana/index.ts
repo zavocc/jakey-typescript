@@ -1,3 +1,4 @@
+import { getSendableChannel } from "../../functions";
 import { EmbedBuilder } from "discord.js";
 import { Message, SendableChannels } from "discord.js";
 
@@ -12,10 +13,7 @@ export const HAVE_A_BANANA_TOOL_SCHEMA =
 
 export async function have_a_banana(discord_interaction: Message, params: { }): Promise<string> {
   // We just send image of banana
-  const messageChannel: SendableChannels | null = discord_interaction.channel?.isSendable() ? discord_interaction.channel : null;
-  if (!messageChannel) {
-    throw new Error("Message channel is not available.");
-  } 
+  const messageChannel: SendableChannels = getSendableChannel(discord_interaction);
 
   // Ignore params
   params;

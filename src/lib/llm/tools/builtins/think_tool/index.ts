@@ -1,3 +1,4 @@
+import { getSendableChannel } from "../../functions";
 import { Message, SendableChannels } from "discord.js";
 
 export const THINK_TOOL_SCHEMA = 
@@ -21,10 +22,7 @@ export const THINK_TOOL_SCHEMA =
 
 export async function think_tool(discord_interaction: Message, params: { thought: string }): Promise<string> {
   // Narrow to a channel type that is allowed to send messages
-  const messageChannel: SendableChannels | null = discord_interaction.channel?.isSendable() ? discord_interaction.channel : null;
-  if (!messageChannel) {
-    throw new Error("Message channel is not available.");
-  } 
+  const messageChannel: SendableChannels = getSendableChannel(discord_interaction);
 
   // Send the thought as a message to the user
   await messageChannel.send(`> ${params.thought}`);

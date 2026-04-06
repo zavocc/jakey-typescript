@@ -6,7 +6,7 @@ import { JAKEY_SYSTEM_PROMPT } from '../../../data/sysprompts';
 import { text_completion } from '../generateContent';
 
 // Built-in tools
-import { BUILTIN_TOOL_SCHEMAS, toolFunctions } from '../tools/builtinTools';
+import { BUILTIN_TOOL_SCHEMAS, toolFunctions } from '../tools/builtins';
 
 export async function chatToLLM(
   prompt: string,

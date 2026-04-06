@@ -1,4 +1,5 @@
 import { Message, SendableChannels } from "discord.js";
+import { getSendableChannel } from "../../functions";
 
 export const FILE_WRITE_TOOL_SCHEMA = 
   {
@@ -25,11 +26,8 @@ export const FILE_WRITE_TOOL_SCHEMA =
 
 export async function file_write(discord_interaction: Message, params: { content: string; filename: string }): Promise<string> {
   // Narrow to a channel type that is allowed to send messages
-  const messageChannel: SendableChannels | null = discord_interaction.channel?.isSendable() ? discord_interaction.channel : null;
-  if (!messageChannel) {
-    throw new Error("Message channel is not available.");
-  } 
-
+  const messageChannel: SendableChannels = getSendableChannel(discord_interaction);
+  
   // send as a file attachment
   const buffer = Buffer.from(params.content, "utf-8");
   await messageChannel.send({
