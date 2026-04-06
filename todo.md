@@ -20,6 +20,8 @@ const messageChannel: SendableChannels | null = discord_interaction.channel?.isS
 ```
 as currently the test tools have these code separately
 
+To implement tool switching, we create a function called `fetchToolSchemaFunctions`
+
 - [ ] mongodb indexing
 - [ ] better logging, especially in lib/services
 
