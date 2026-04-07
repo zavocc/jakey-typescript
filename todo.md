@@ -25,7 +25,8 @@ To implement tool switching, we create a function called `fetchToolSchemaFunctio
 - [ ] mongodb indexing
 - [ ] better logging, especially in lib/services
 
-- [ ] When model is removed from models.json, add checks at inference-time (maybe in `modelsSelection.ts`) to see if the model alias exists in `models.json` otherwise throw an error
+- [ ] When model is removed from models.json, add checks (in `modelsSelection.ts`) at runtime during model generation process to see if the model alias exists in `models.json` otherwise throw an error
+  - [ ] As of 4/7/2026 - right now if the alias does not exist, it routes to first available model.
 
 - [x] separate generateContent.ts as a sole utility functions that takes prompt, file inputs, and possibly messages array
 - [x] agentic interface and multi-part multimodal outputs must be in separate files e.g. llmAgenticReciever.ts where functions can take Discord.JS's Interaction (type `Message`) object as parameter so the agentic reciever function can still send messages or perform actions like react message
