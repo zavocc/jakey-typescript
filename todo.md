@@ -25,11 +25,14 @@ To implement tool switching, we create a function called `fetchToolSchemaFunctio
 - [ ] mongodb indexing
 - [ ] better logging, especially in lib/services
 
+- [ ] When model is removed from models.json, add checks at inference-time (maybe in `modelsSelection.ts`) to see if the model alias exists in `models.json` otherwise throw an error
+
 - [x] separate generateContent.ts as a sole utility functions that takes prompt, file inputs, and possibly messages array
 - [x] agentic interface and multi-part multimodal outputs must be in separate files e.g. llmAgenticReciever.ts where functions can take Discord.JS's Interaction (type `Message`) object as parameter so the agentic reciever function can still send messages or perform actions like react message
     - [ ] the chatLLM.ts event also focus more on showing agentic tools and multimodal result
         call chain are: User -> chatLLM.ts -> AgenticReciever -> generateContent.ts -> Report back to agenticReciever and send message text or perform tool call loops -> Send message back to chatLLM.ts
 
-- [ ] Implement jsonConfigReader in preferencesLoader instead of directly importing it
+- [x] Implement jsonConfigReader in preferencesLoader instead of directly importing it
+  4/7/2026: Implemented thru src/lib/preferencesDBLoader.ts
 
 and most importantly, find and resolve //TODOs
