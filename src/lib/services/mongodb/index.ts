@@ -1,8 +1,8 @@
+import { getConfigJsonKeySync } from "../../configuratorJSON";
 import { MongoClient, type Db } from "mongodb";
-import { db } from "../../../config.json";
 
-// Create a MongoClient with a MongoClientOptions object to set the Stable API version
-const client = new MongoClient(db.mongodb);
+const client = new MongoClient(getConfigJsonKeySync("db")?.mongodb ?? "");
+const db = getConfigJsonKeySync("db") ?? { mongodb_db_name: "" };
 let isConnected = false;
 
 // connect to db

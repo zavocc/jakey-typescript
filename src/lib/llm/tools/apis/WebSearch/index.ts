@@ -1,9 +1,9 @@
-import { tools } from "../../../../../config.json";
+import { getConfigJsonKey } from "../../../../../lib/configuratorJSON";
 import { Message } from "discord.js";
 
 export async function web_search(discord_interaction: Message, params: { query: string }): Promise<string> {
-  const apiKey = tools?.webSearchAPIKey;
-  if (!apiKey) {
+  const apiKey = await getConfigJsonKey("tools");
+  if (!apiKey?.webSearchAPIKey) {
     throw new Error("Web Search API key is not configured.");
   }
 
@@ -14,7 +14,7 @@ export async function web_search(discord_interaction: Message, params: { query: 
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      "Authorization": `Bearer ${apiKey}`
+      "Authorization": `Bearer ${apiKey.webSearchAPIKey}`
     },
     body: JSON.stringify({
       query: params.query,

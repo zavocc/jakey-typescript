@@ -1,7 +1,4 @@
-// import token from config.json
-import config from "./config.json";
-import { ConfigSchema, validateOrThrow } from "./types/schemas";
-
+import { getConfigJsonKey } from "./lib/configuratorJSON";
 import {
   Client,
   Collection,
@@ -13,8 +10,6 @@ import path from "path";
 
 // TODO: to polish
 import { startServices } from "./lib/services/services";
-
-const validatedConfig = validateOrThrow("config.json", ConfigSchema, config);
 
 // Create a new client instance
 const botClient: Client = new Client({
@@ -71,7 +66,12 @@ for (const file of eventFiles) {
 // Start services and log in
 async function bootstrap() {
   await startServices();
-  await botClient.login(validatedConfig.token);
+  const token = await getConfigJsonKey("token");
+  if (!token) {
+    console.error("Token not found in config.json");
+    process.exit(1);
+  }
+  await botClient.login(token);
 }
 
 bootstrap().catch((error) => {

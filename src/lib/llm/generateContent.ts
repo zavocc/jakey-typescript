@@ -1,4 +1,4 @@
-import { api_keys } from '../../config.json';
+import { getConfigJsonKeySync } from '../../lib/configuratorJSON';
 import { OpenRouter } from '@openrouter/sdk';
 import type { AssistantMessage } from '@openrouter/sdk/models';
 
@@ -6,7 +6,7 @@ import type { AssistantMessage } from '@openrouter/sdk/models';
 import { mkdir, writeFile } from 'fs/promises';
 
 const openrouter = new OpenRouter({
-  apiKey: api_keys.openrouter,
+  apiKey: getConfigJsonKeySync("api_keys")?.openrouter ?? ""
 });
 
 type OutputShape = {
