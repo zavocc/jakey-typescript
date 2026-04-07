@@ -30,4 +30,6 @@ To implement tool switching, we create a function called `fetchToolSchemaFunctio
     - [ ] the chatLLM.ts event also focus more on showing agentic tools and multimodal result
         call chain are: User -> chatLLM.ts -> AgenticReciever -> generateContent.ts -> Report back to agenticReciever and send message text or perform tool call loops -> Send message back to chatLLM.ts
 
+- [ ] Implement jsonConfigReader in preferencesLoader instead of directly importing it
+
 and most importantly, find and resolve //TODOs
