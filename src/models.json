@@ -20,6 +20,10 @@
             "additional_properties": {
                 "reasoning": {
                     "effort": "low"
+                },
+                "user": "jakeybot-027ej",
+                "provider": {
+                    "only": ["google-vertex"]
                 }
             }
         }
