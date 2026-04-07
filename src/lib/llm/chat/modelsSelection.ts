@@ -6,6 +6,8 @@ import { z } from "zod";
 
 type ModelPropsType = z.infer<typeof ModelPropsSchema>;
 
+// TODO: To cache models list in memory after first read, refresh after ttl expires, since it won't change until we restart the bot.
+// For now the file is being re-read everytime we call getModelProps
 export async function getModelProps(userId: string): Promise<ModelPropsType> {
   // Load user model selection so we can search thru models.json for the right one
   const userModelAlias = await loadPreferences(userId, "user_choice_model_alias");
