@@ -1,4 +1,4 @@
-import { savePreferences } from "../../lib/preferencesLoader";
+import { savePreferences } from "../../lib/preferencesDBLoader";
 import {
   AutocompleteInteraction,
   ChatInputCommandInteraction,

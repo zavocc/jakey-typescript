@@ -1,4 +1,4 @@
-import { loadPreferences } from "../../preferencesLoader";
+import { loadPreferences } from "../../preferencesDBLoader";
 import { ModelPropsSchema } from "../../../types/schemas";
 import { readFile } from "node:fs/promises";
 import path from "node:path";
