@@ -16,8 +16,8 @@ export async function fetchToolPack(selectedTool: string): Promise<ToolPack> {
   let allTools: Record<string, ToolHandler> = { ...BuiltInToolFunctions };
 
   if (selectedTool !== "Disabled") {
-    const schemaS = await import(`./apis/${selectedTool}/schema`);
-    const functionS = await import(`./apis/${selectedTool}/index`);
+    const schemaS = await import(`./apis/${selectedTool}/schema.js`);
+    const functionS = await import(`./apis/${selectedTool}/index.js`);
 
     // Look-up all exported functions only
     const functions = Object.fromEntries(

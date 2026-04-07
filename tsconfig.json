@@ -1,6 +1,7 @@
 {
   "compilerOptions": {
     "target": "ES2022",
+    // for .js-to-.ts resolution we use NodeNext
     "module": "NodeNext",
     "moduleResolution": "NodeNext",
     "rootDir": "./src",
