@@ -5,8 +5,8 @@ import type { Message, SendableChannels } from 'discord.js';
 import { JAKEY_SYSTEM_PROMPT } from '../../../data/sysprompts';
 import { text_completion } from '../generateContent';
 
-// Built-in tools
-import { BUILTIN_TOOL_SCHEMAS, toolFunctions } from '../tools/builtins';
+// Tool loader
+import { fetchToolPack } from '../tools/utils';
 
 export async function chatToLLM(
   prompt: string,
@@ -38,11 +38,14 @@ export async function chatToLLM(
     additionalParams = { ...modelProps.additional_properties };
   }
 
+  // Load tool schemas and functions
+  const loadedToolPack = await fetchToolPack("WebSearch");
+
   // Tools
   if (modelProps.enable_tools) {
     additionalParams = {
       ...additionalParams,
-      tools: BUILTIN_TOOL_SCHEMAS,
+      tools: loadedToolPack.schemas,
     };
   }
 
@@ -68,7 +71,7 @@ export async function chatToLLM(
       // For each tool call, execute and append the result to the context
       for (const toolCall of response.modelResponse.toolCalls) {
         let toolResult;
-        const toolFunction = toolFunctions[toolCall.function.name as keyof typeof toolFunctions];
+        const toolFunction = loadedToolPack.functions[toolCall.function.name as keyof typeof loadedToolPack.functions];
 
         // Send interstitial
         await messageChannel.send(`-# > Used: ${toolCall.function.name} with arguments ${toolCall.function.arguments}`);

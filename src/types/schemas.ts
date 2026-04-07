@@ -45,7 +45,11 @@ export const ConfigSchema = z.object({
   db: z.object({
     mongodb: z.string(),
     mongodb_db_name: z.string()
-  })
+  }),
+  // Optional
+  tools: z.object({
+    webSearchAPIKey: z.string().optional()
+  }).optional()
 });
 
 export type ModelProps = z.infer<typeof ModelPropsSchema>;
