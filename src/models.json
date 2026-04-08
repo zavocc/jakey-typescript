@@ -18,7 +18,7 @@
             "enable_tools": true,
             "additional_properties": {
                 "reasoning": {
-                    "effort": "low"
+                    "effort": "medium"
                 },
                 "provider": {
                     "only": ["z-ai"]
