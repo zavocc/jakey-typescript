@@ -1,4 +1,4 @@
-## current goal: tools, agentic interfaces, and DB
+## current goal: tools
 - [x] validation schema of model lists in ./src/types/schemas.ts using zod 
     - [x] chat history per provider
 - [ ] tool use
@@ -22,17 +22,22 @@ as currently the test tools have these code separately
 
 To implement tool switching, we create a function called `fetchToolSchemaFunctions`
 
-- [ ] mongodb indexing
-- [ ] better logging, especially in lib/services
-
-- [ ] When model is removed from models.json, add checks (in `modelsSelection.ts`) at runtime during model generation process to see if the model alias exists in `models.json` otherwise throw an error
-  - [ ] As of 4/7/2026 - right now if the alias does not exist, it routes to first available model.
-
-- [x] separate generateContent.ts as a sole utility functions that takes prompt, file inputs, and possibly messages array
 - [x] agentic interface and multi-part multimodal outputs must be in separate files e.g. llmAgenticReciever.ts where functions can take Discord.JS's Interaction (type `Message`) object as parameter so the agentic reciever function can still send messages or perform actions like react message
     - [ ] the chatLLM.ts event also focus more on showing agentic tools and multimodal result
         call chain are: User -> chatLLM.ts -> AgenticReciever -> generateContent.ts -> Report back to agenticReciever and send message text or perform tool call loops -> Send message back to chatLLM.ts
 
+
+### Model selection and misc
+- [x] When model is removed from models.json, add checks (in `modelsSelection.ts`) at runtime during model generation process to see if the model alias exists in `models.json` otherwise throw an error
+  - [x] As of 4/7/2026 - right now if the alias does not exist, it routes to first available model.
+  - [x] As of 4/8/2026 - It has been implemented
+  - [ ] Optimize checks if caching is implemented
+
+- [ ] mongodb indexing
+- [ ] better logging, especially in lib/services
+
+
+- [x] separate generateContent.ts as a sole utility functions that takes prompt, file inputs, and possibly messages array
 - [x] Implement jsonConfigReader in preferencesLoader instead of directly importing it
   4/7/2026: Implemented thru src/lib/preferencesDBLoader.ts
 
