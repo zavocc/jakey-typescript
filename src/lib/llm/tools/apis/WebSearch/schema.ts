@@ -14,6 +14,6 @@ export const TOOL_SCHEMAS = [
         },
         required: ["query"],
       }
-    },
+    }
   }
 ]

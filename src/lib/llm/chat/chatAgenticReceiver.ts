@@ -39,7 +39,7 @@ export async function chatToLLM(
   }
 
   // Load tool schemas and functions
-  const loadedToolPack = await fetchToolPack("WebSearch");
+  const loadedToolPack = await fetchToolPack("OpenRouterSupportSearch");
 
   // Tools
   if (modelProps.enable_tools) {
@@ -74,7 +74,7 @@ export async function chatToLLM(
         const toolFunction = loadedToolPack.functions[toolCall.function.name as keyof typeof loadedToolPack.functions];
 
         // Send interstitial
-        await messageChannel.send(`-# > Used: ${toolCall.function.name} with arguments ${toolCall.function.arguments}`);
+        await messageChannel.send(`-# > Used: ${toolCall.function.name}`);
 
         try {
           toolResult = await toolFunction(discord_interaction, JSON.parse(toolCall.function.arguments));
