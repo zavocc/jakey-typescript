@@ -39,7 +39,7 @@ export async function chatToLLM(
   }
 
   // Load tool schemas and functions
-  const loadedToolPack = await fetchToolPack("OpenRouterSupportSearch");
+  const loadedToolPack = await fetchToolPack("WebSearch");
 
   // Tools
   if (modelProps.enable_tools) {
