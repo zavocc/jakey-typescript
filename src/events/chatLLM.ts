@@ -39,6 +39,8 @@ module.exports = {
         // narrows to Error type
         if (error instanceof Error && error.message.includes("does not support file attachments")) {
           await textChannel.send(error.message);
+        } else if (error instanceof Error && error.message.includes("Model unavailable")) {
+          await textChannel.send("The model you have selected is currently unavailable, please select a different model");
         } else {
           console.error("Error generating response:", error);
           await textChannel.send("Sorry, I couldn't generate a response at the moment.");

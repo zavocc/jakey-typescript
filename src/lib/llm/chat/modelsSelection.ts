@@ -17,15 +17,16 @@ export async function getModelProps(userId: string): Promise<ModelPropsType> {
   const raw = await readFile(modelsPath, "utf-8");
   const { models } = JSON.parse(raw) as { models: Array<ModelPropsType> };
 
+  const selectedModel = userModelAlias
+    ? models.find((model) => model.model_alias === userModelAlias)
+    : undefined;
+
   // If null, we get the first model in the list as default
-  if (userModelAlias) {
-    // Iterate to see if we have associated model with the alias
-    for (const model of models) {
-      if (model.model_alias === userModelAlias) {
-        return model;
-      }
-    }
+
+  // Check if selected model exists from data, if not, throw an exception
+  if (userModelAlias && !selectedModel) {
+    throw new Error("Model unavailable");
   }
 
-  return models[0];
+  return selectedModel || models[0];
 }
