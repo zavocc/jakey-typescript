@@ -1,57 +1,85 @@
 import { readdir } from "node:fs/promises";
 import path from "node:path";
-import { Message } from "discord.js";
 import { BUILTIN_TOOL_SCHEMAS, BuiltInToolFunctions } from "./builtins";
+import type { LoadedTool, LocalToolHandler, ToolPack } from "./types";
 
-type ToolHandler = (discord_interaction: Message, params: any) => Promise<string>;
-
-type ToolPack = {
-  schemas: unknown[];
-  functions: Record<string, ToolHandler>;
-};
+function createLocalLoadedTools(
+  functions: Record<string, LocalToolHandler>,
+  sourceType: "builtin" | "api",
+): Record<string, LoadedTool> {
+  return Object.fromEntries(
+    Object.entries(functions).map(([name, execute]) => [
+      name,
+      {
+        sourceType,
+        name,
+        interstitialLabel: name,
+        execute,
+      },
+    ])
+  ) as Record<string, LoadedTool>;
+}
 
 export async function fetchToolPack(selectedTool: string): Promise<ToolPack> {
   // if selectedTool name is "Disabled", we can only import built-in schemas from builtins/
 
   // Schemas
   let allSchemas: Array<unknown> = [...BUILTIN_TOOL_SCHEMAS];
-  let allTools: Record<string, ToolHandler> = { ...BuiltInToolFunctions };
+  let allTools: Record<string, LoadedTool> = createLocalLoadedTools(
+    BuiltInToolFunctions,
+    "builtin",
+  );
 
   if (selectedTool !== "Disabled") {
-    const schemaS = await import(`./apis/${selectedTool}/schema.js`);
-    const functionS = await import(`./apis/${selectedTool}/index.js`);
+    const schemaModule = await import(`./apis/${selectedTool}/schema.js`);
 
     // check if schemaS have TOOL_HUMAN_NAME otherwise we skip this tool
-    if (!schemaS.TOOL_HUMAN_NAME) {
+    if (!schemaModule.TOOL_HUMAN_NAME) {
       console.warn(`Tool ${selectedTool} does not have TOOL_HUMAN_NAME, skipping...`);
       return {
         schemas: allSchemas,
-        functions: allTools,
+        tools: allTools,
       };
     }
 
-    // Look-up all exported functions only
-    const functions = Object.fromEntries(
-      Object.entries(functionS)
-        // Ignore the key as we can only check if the value is function
-        // Returns after running Object.entries: [["web_search", async () => {}]]
-        .filter(([, valueFunction]) => typeof valueFunction === "function")
-    ) as Record<string, ToolHandler>;
+    if (typeof schemaModule.getDynamicToolPack === "function") {
+      const dynamicToolPack = await schemaModule.getDynamicToolPack();
 
-    allSchemas = [
-      ...allSchemas,
-      ...schemaS.TOOL_SCHEMAS
-    ];
+      allSchemas = [
+        ...allSchemas,
+        ...dynamicToolPack.schemas,
+      ];
 
-    allTools = {
-      ...allTools,
-      ...functions,
-    };
+      allTools = {
+        ...allTools,
+        ...dynamicToolPack.tools,
+      };
+    } else {
+      const functionModule = await import(`./apis/${selectedTool}/index.js`);
+
+      // Look-up all exported functions only
+      const functions = Object.fromEntries(
+        Object.entries(functionModule)
+          // Ignore the key as we can only check if the value is function
+          // Returns after running Object.entries: [["web_search", async () => {}]]
+          .filter(([, valueFunction]) => typeof valueFunction === "function")
+      ) as Record<string, LocalToolHandler>;
+
+      allSchemas = [
+        ...allSchemas,
+        ...schemaModule.TOOL_SCHEMAS,
+      ];
+
+      allTools = {
+        ...allTools,
+        ...createLocalLoadedTools(functions, "api"),
+      };
+    }
   }
 
   return {
     schemas: allSchemas,
-    functions: allTools,
+    tools: allTools,
   };
 }
 
@@ -74,6 +102,14 @@ export async function fetchListAvailableTool(): Promise<Array<{ name: string; hu
 
           if (typeof schemaModule.TOOL_HUMAN_NAME !== "string") {
             return null;
+          }
+
+          if (typeof schemaModule.isToolAvailable === "function") {
+            const isToolAvailable = await schemaModule.isToolAvailable();
+
+            if (!isToolAvailable) {
+              return null;
+            }
           }
 
           return {

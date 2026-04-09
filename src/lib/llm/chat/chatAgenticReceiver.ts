@@ -8,6 +8,7 @@ import { loadPreferences } from '../../preferencesDBLoader';
 
 // Tool loader
 import { fetchToolPack } from '../tools/utils';
+import { executeToolCall } from '../tools/functions';
 
 export async function chatToLLM(
   prompt: string,
@@ -74,13 +75,25 @@ export async function chatToLLM(
       // For each tool call, execute and append the result to the context
       for (const toolCall of response.modelResponse.toolCalls) {
         let toolResult;
-        const toolFunction = loadedToolPack.functions[toolCall.function.name as keyof typeof loadedToolPack.functions];
+        const loadedTool = loadedToolPack.tools[toolCall.function.name as keyof typeof loadedToolPack.tools];
 
         // Send interstitial
-        await messageChannel.send(`-# > Used: ${toolCall.function.name}`);
+        await messageChannel.send(`-# > Used: ${loadedTool?.interstitialLabel ?? toolCall.function.name}`);
 
         try {
-          toolResult = await toolFunction(discord_interaction, JSON.parse(toolCall.function.arguments));
+          if (!loadedTool) {
+            throw new Error(`Tool ${toolCall.function.name} is not registered.`);
+          }
+
+          const parsedArguments = toolCall.function.arguments
+            ? JSON.parse(toolCall.function.arguments)
+            : {};
+
+          toolResult = await executeToolCall(
+            loadedTool,
+            discord_interaction,
+            parsedArguments,
+          );
         } catch (error) {
           console.error(`Error executing tool ${toolCall.function.name}:`, error);
           toolResult = `{"error": "Failed to execute tool ${toolCall.function.name}, reason: ${error instanceof Error ? error.message : String(error)}"}`;
