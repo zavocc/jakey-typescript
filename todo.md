@@ -8,7 +8,7 @@
     AS OF 4/5/2026: THIS WORKS WITH FULL Message.channel.send BUT half-baked, only few set of built in tools that cannot be disabled    
     And it's only built-in, but enable_tools toggle works
     - [ ] Send all possible content (text, image) from toolHasFinished loop accessing response.modelResponse content and send it to Discord UI from the chatAgenticReciever, and also avoid dups, we need to make sure loop logic is handled correctly
-    - [ ] /tools set command
+    - [x] /tools set command
 
 Also
 Avoid DRY code of this snippet:

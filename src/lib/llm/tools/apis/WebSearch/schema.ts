@@ -1,3 +1,4 @@
+export const TOOL_HUMAN_NAME = "Web Search"
 export const TOOL_SCHEMAS = [
   {
     type: "function",

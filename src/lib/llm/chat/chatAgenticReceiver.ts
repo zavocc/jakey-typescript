@@ -4,6 +4,7 @@ import type { ModelProps } from '../../../types/schemas';
 import type { Message, SendableChannels } from 'discord.js';
 import { JAKEY_SYSTEM_PROMPT } from '../../../data/sysprompts';
 import { text_completion } from '../generateContent';
+import { loadPreferences } from '../../preferencesDBLoader';
 
 // Tool loader
 import { fetchToolPack } from '../tools/utils';
@@ -39,7 +40,9 @@ export async function chatToLLM(
   }
 
   // Load tool schemas and functions
-  const loadedToolPack = await fetchToolPack("WebSearch");
+  // If user_choice_tool is null, we will load "Disabled" tool which only has built-in tools
+  const toolSelection = await loadPreferences(discord_user_id, "user_choice_tool");
+  const loadedToolPack = await fetchToolPack(toolSelection ?? "Disabled");
 
   // Tools
   if (modelProps.enable_tools) {
