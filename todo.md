@@ -33,7 +33,8 @@ To implement tool switching, we create a function called `fetchToolSchemaFunctio
   - [x] As of 4/8/2026 - It has been implemented
   - [ ] Optimize checks if caching is implemented
 
-- [ ] mongodb indexing
+- [x] mongodb indexing
+- [ ] add an option in /sweep command to also reset discord user preferences
 - [ ] better logging, especially in lib/services
 
 
