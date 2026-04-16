@@ -19,7 +19,7 @@ export async function chatToLLM(
   const messageChannel: SendableChannels | null = discord_interaction.channel?.isSendable() ? discord_interaction.channel : null;
   if (!messageChannel) {
     throw new Error("Message channel is not available.");
-  } 
+  }
 
   // Load model properties
   const modelProps: ModelProps = await getModelProps(discord_user_id);
@@ -55,6 +55,7 @@ export async function chatToLLM(
   // Generate content
   let response = await text_completion(
     modelProps.model_id,
+    modelProps.client_type,
     prompt,
     JAKEY_SYSTEM_PROMPT,
     attachment_urls,
@@ -67,29 +68,36 @@ export async function chatToLLM(
 
   while (!toolHasFinished) {
     // Check if we have tools
-    if (response.modelResponse.toolCalls) {
+    if (response.modelResponse.tool_calls) {
       // Append the response
       context.push(response.modelResponse);
 
       // For each tool call, execute and append the result to the context
-      for (const toolCall of response.modelResponse.toolCalls) {
+      for (const toolCall of response.modelResponse.tool_calls) {
+        // Only function-type tool calls are supported
+        if (toolCall.type !== 'function') {
+          console.warn(`Unsupported tool call type: ${toolCall.type}, skipping.`);
+          continue;
+        }
+
         let toolResult;
-        const toolFunction = loadedToolPack.functions[toolCall.function.name as keyof typeof loadedToolPack.functions];
+        const toolName = toolCall.function.name;
+        const toolFunction = loadedToolPack.functions[toolName as keyof typeof loadedToolPack.functions];
 
         // Send interstitial
-        await messageChannel.send(`-# > Used: ${toolCall.function.name}`);
+        await messageChannel.send(`-# > Used: ${toolName}`);
 
         try {
           toolResult = await toolFunction(discord_interaction, JSON.parse(toolCall.function.arguments));
         } catch (error) {
-          console.error(`Error executing tool ${toolCall.function.name}:`, error);
-          toolResult = `{"error": "Failed to execute tool ${toolCall.function.name}, reason: ${error instanceof Error ? error.message : String(error)}"}`;
+          console.error(`Error executing tool ${toolName}:`, error);
+          toolResult = `{"error": "Failed to execute tool ${toolName}, reason: ${error instanceof Error ? error.message : String(error)}"}`;
         } finally {
           // Append tool result to context
           context.push({
             role: "tool",
-            toolCallId: toolCall.id,
-            name: toolCall.function.name,
+            tool_call_id: toolCall.id,
+            name: toolName,
             content: toolResult,
           });
         }
@@ -98,6 +106,7 @@ export async function chatToLLM(
       // Rerun
       response = await text_completion(
         modelProps.model_id,
+        modelProps.client_type,
         undefined,
         JAKEY_SYSTEM_PROMPT,
         undefined,
@@ -106,7 +115,7 @@ export async function chatToLLM(
       );
 
       // If tool calls still exist, we continue the loop, otherwise we break and send the final response
-      if (!response.modelResponse.toolCalls || response.modelResponse.toolCalls.length === 0) {
+      if (!response.modelResponse.tool_calls || response.modelResponse.tool_calls.length === 0) {
         toolHasFinished = true;
       } else {
         // Continue the loop and let the agent call more tools if needed
@@ -123,6 +132,11 @@ export async function chatToLLM(
 
   // Save context back to db
   await saveContext(discord_user_id, context, modelProps.thread_name);
+
+  // Check if response.modelResponse.content is null
+  if (!response.modelResponse.content) {
+    throw new Error("No output received from the model.");
+  }
 
   // Reply to user
   await messageChannel.send(response.modelResponse.content);

@@ -17,41 +17,47 @@ async function getPrefsCollection() {
 }
 
 async function loadPreferences<K extends PreferenceKey>(userId: string, prefName: K): Promise<Preferences[K] | null> {
-    // Defensive check in case key comes from unchecked/casted input
-    if (!isPreferenceKey(prefName)) {
-        throw new Error(`Invalid preference name: ${prefName}`);
-    }
+  // Defensive check in case key comes from unchecked/casted input
+  if (!isPreferenceKey(prefName)) {
+    throw new Error(`Invalid preference name: ${prefName}`);
+  }
 
-    const collection = await getPrefsCollection();
-    const result = await collection.findOne({ user_id: userId });
+  const collection = await getPrefsCollection();
+  const result = await collection.findOne({ user_id: userId });
 
-    // if none, we can return null
-    if (!result) {
-        return null;
-    }
+  // if none, we can return null
+  if (!result) {
+    return null;
+  }
 
-    return (result[prefName] ?? null) as Preferences[K] | null;
+  return (result[prefName] ?? null) as Preferences[K] | null;
 }
 
 // extend from PreferenceKey so typescript won't complain
 async function savePreferences<K extends PreferenceKey>(userId: string, prefName: K, data: Preferences[K]): Promise<void> {
-    // Defensive check in case key comes from unchecked/casted input
-    if (!isPreferenceKey(prefName)) {
-        throw new Error(`Invalid preference name: ${prefName}`);
-    }
-    const validationResult = PreferencesSchema.shape[prefName].safeParse(data);
+  // Defensive check in case key comes from unchecked/casted input
+  if (!isPreferenceKey(prefName)) {
+    throw new Error(`Invalid preference name: ${prefName}`);
+  }
+  const validationResult = PreferencesSchema.shape[prefName].safeParse(data);
 
-    if (!validationResult.success) {
-        throw new Error(`Invalid data for preference '${prefName}': ${validationResult.error.message}`);
-    }
+  if (!validationResult.success) {
+    throw new Error(`Invalid data for preference '${prefName}': ${validationResult.error.message}`);
+  }
 
-    const collection = await getPrefsCollection();
-    const update = { [prefName]: data } as Pick<Preferences, K>;
-    await collection.updateOne(
-      { user_id: userId },
-      { $set: update },
-      { upsert: true }
-    );
+  const collection = await getPrefsCollection();
+  const update = { [prefName]: data } as Pick<Preferences, K>;
+  await collection.updateOne(
+    { user_id: userId },
+    { $set: update },
+    { upsert: true }
+  );
 }
 
-export { loadPreferences, savePreferences };
+// reset user preferences
+async function clearUserPreferences(userId: string): Promise<void> {
+  const collection = await getPrefsCollection();
+  await collection.deleteOne({ user_id: userId });
+}
+
+export { loadPreferences, savePreferences, clearUserPreferences };

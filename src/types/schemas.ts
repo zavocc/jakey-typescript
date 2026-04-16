@@ -32,6 +32,7 @@ export const ModelPropsSchema = z.object({
   enable_files: z.boolean(),
   enable_tools: z.boolean(),
   thread_name: z.string().optional(),
+  client_type: z.enum(["openrouter", "google", "openai"]),
   additional_properties: z.record(z.string(), z.unknown()).optional()
 });
 
@@ -40,7 +41,9 @@ export const ConfigSchema = z.object({
   token: z.string(),
   app_id: z.string(),
   api_keys: z.object({
-    openrouter: z.string()
+    openrouter: z.string().optional(),
+    google: z.string().optional(),
+    openai: z.string().optional()
   }),
   db: z.object({
     mongodb: z.string(),

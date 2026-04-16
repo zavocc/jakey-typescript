@@ -1,21 +1,17 @@
-import { getConfigJsonKeySync } from '../../lib/configuratorJSON';
-import { OpenRouter } from '@openrouter/sdk';
-import type { AssistantMessage } from '@openrouter/sdk/models';
+import type { ChatCompletionMessage } from 'openai/resources/chat/completions';
+import { OpenRouterClient, GoogleClient, OpenAIClient } from './providerClients';
 
 // DEBUG
 import { mkdir, writeFile } from 'fs/promises';
 
-const openrouter = new OpenRouter({
-  apiKey: getConfigJsonKeySync("api_keys")?.openrouter ?? ""
-});
-
 type OutputShape = {
-  modelResponse: AssistantMessage,
+  modelResponse: ChatCompletionMessage,
   model_used: string,
 }
 
 export async function text_completion(
   model: string,
+  provider_type: "openrouter" | "google" | "openai",
   prompt?: string,
   system_prompt?: string,
   attachment_urls?: string[],
@@ -31,16 +27,25 @@ export async function text_completion(
     throw new Error('At least one input modality must be provided: prompt, attachment_urls, or messages_context.');
   }
 
+  // Assign appropriate provider_type
+  let oclient;
+  if (provider_type === "openrouter") {
+    oclient = OpenRouterClient;
+  } else if (provider_type === "google") {
+    oclient = GoogleClient;
+  } else if (provider_type === "openai") {
+    oclient = OpenAIClient;
+  }
+
+  if (!oclient) {
+    throw new Error('No provider_type provided.');
+  }
+
   // If context is empty, put system prompt
   if ((context.length === 0) && system_prompt) {
     context.push({
       role: 'system',
-      content: [
-        {
-          type: 'text',
-          text: system_prompt,
-        }
-      ],
+      content: system_prompt,
     });
   }
 
@@ -53,7 +58,7 @@ export async function text_completion(
   if (attachment_urls && attachment_urls.length > 0) {
     const attachmentMessages = attachment_urls.map((url) => ({
       type: 'image_url',
-      imageUrl: {
+      image_url: {
         url: url,
       }
     }));
@@ -85,15 +90,18 @@ export async function text_completion(
     additionalParams = additional_properties;
   }
 
-  const outputs = await openrouter.chat.send({
-    chatGenerationParams: {
-      ...additionalParams,
-      model: model,
-      messages: context,
-      stream: false,
-      temperature: 1
-    }
+  const outputs = await oclient.chat.completions.create({
+    ...additionalParams,
+    model: model,
+    messages: context,
+    stream: false,
+    temperature: 1
   })
+
+  // We cannot receive null output so we throw if it is null
+  if (!outputs) {
+    throw new Error('No output received from the model.');
+  }
 
   // Log possible outputs
   const debugDir = `${__dirname}/../../../harbour/debug`;
