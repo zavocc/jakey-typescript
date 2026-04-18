@@ -1,43 +1,12 @@
 {
     "models": [
         {
-            "model_id": "qwen/qwen3.6-plus:free",
-            "model_alias": "Qwen 3.6 Plus Preview (Free)",
-            "enable_files": true,
-            "enable_tools": true,
-            "client_type": "openrouter",
-            "additional_properties": {
-                "reasoning": {
-                    "effort": "low"
-                }
-            }
-        },
-        {
-            "model_id": "z-ai/glm-5.1",
-            "model_alias": "GLM 5.1",
-            "enable_files": false,
-            "enable_tools": true,
-            "client_type": "openrouter",
-            "additional_properties": {
-                "reasoning": {
-                    "effort": "medium"
-                },
-                "provider": {
-                    "only": [
-                        "z-ai"
-                    ]
-                }
-            }
-        },
-        {
             "model_id": "gemini-3-flash-preview",
             "model_alias": "Gemini 3 Flash Preview",
             "enable_files": true,
             "enable_tools": true,
-            "thread_name": "google",
-            "client_type": "google",
-            "additional_properties": {
-                "reasoning_effort": "medium"
+            "additional_params": {
+                "store": true
             }
         }
     ]

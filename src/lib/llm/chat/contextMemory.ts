@@ -1,31 +1,30 @@
 // functions to load and save to db
 import { getDB } from '../../services/mongodb';
-const MONGODB_COLLECTION_NAME = 'chat_contexts';
-const DEFAULT_THREAD_NAME = 'default';
+import { GoogleClient } from '../providerClients';
+const MONGODB_COLLECTION_NAME = 'interactionID';
 
 async function getContextCollection() {
   const db = await getDB();
   return db.collection(MONGODB_COLLECTION_NAME);
 }
 
-export async function loadContext(userId: string, threadName?: string) {
+export async function loadContext(userId: string): Promise<string | null> {
   try {
     const collection = await getContextCollection();
     const context = await collection.findOne({ userId });
-    return context?.messages?.[threadName || DEFAULT_THREAD_NAME] ?? [];
+    return context?.interaction_id;
   } catch (error) {
     console.error(`Error parsing context for user ${userId}:`, error);
     throw new Error(`Failed to load context for user ${userId}.`);
   }
 }
 
-export async function saveContext(userId: string, context: Array<any>, threadName?: string): Promise<void> {
+export async function saveContext(userId: string, interactionID: string): Promise<void> {
   try {
     const collection = await getContextCollection();
     await collection.updateOne(
       { userId },
-      // NOTE: while in javascript it may appear as object key with dot, in mongodb it will be treated as nested object, which is what we want
-      { $set: { [`messages.${threadName || DEFAULT_THREAD_NAME}`]: context } },
+      { $set: { interaction_id: interactionID } },
       { upsert: true }
     );
   } catch (error) {
@@ -36,5 +35,19 @@ export async function saveContext(userId: string, context: Array<any>, threadNam
 
 export async function clearContext(userId: string): Promise<void> {
   const collection = await getContextCollection();
-  await collection.deleteOne({ userId });
+
+  // First, obtain the interaction ID
+  const context = await loadContext(userId);
+
+  // Delete the interaction from Google AI Studio
+  try {
+    if (context) {
+      await GoogleClient.interactions.delete(context);
+    }
+  } catch (error) {
+    console.error(`Error deleting interaction for user ${userId}:`, error);
+  } finally {
+    // Delete the interaction from db
+    await collection.deleteOne({ userId });
+  }
 }
