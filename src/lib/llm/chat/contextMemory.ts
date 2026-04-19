@@ -54,7 +54,7 @@ export async function clearContext(userId: string): Promise<void> {
       await GoogleClient.interactions.get(context);
     }
   } catch (error) {
-    console.error(`Successfully deleted interaction for user ${userId}.`);
+    console.log(`Successfully deleted interaction for user ${userId}.`);
   }
 
   // Delete the interaction from db
