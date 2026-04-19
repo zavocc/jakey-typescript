@@ -5,26 +5,6 @@ const client = new MongoClient(getConfigJsonKeySync("db")?.mongodb ?? "");
 const db = getConfigJsonKeySync("db") ?? { mongodb_db_name: "" };
 let isConnected = false;
 
-// ensure indexes exist for query performance
-async function ensureIndexes(): Promise<void> {
-  const database = client.db(db.mongodb_db_name);
-
-  // check if the collection is empty before creating an index
-  const userPrefs = database.collection("discord_user_preferences");
-  if ((await userPrefs.countDocuments({}, { limit: 1 })) === 0) {
-    await userPrefs.createIndex({ user_id: 1 }, { unique: true });
-    console.log("[DB] Created index for discord_user_preferences");
-  }
-
-  const chatContexts = database.collection("chat_contexts");
-  if ((await chatContexts.countDocuments({}, { limit: 1 })) === 0) {
-    await chatContexts.createIndex({ userId: 1 }, { unique: true });
-    console.log("[DB] Created index for chat_contexts");
-  }
-
-  console.log("MongoDB indexes initialized.");
-}
-
 // connect to db
 export async function startDB(): Promise<void> {
   if (isConnected) {
@@ -33,7 +13,6 @@ export async function startDB(): Promise<void> {
 
   await client.connect();
   await client.db("admin").command({ ping: 1 });
-  await ensureIndexes();
   isConnected = true;
   console.log("Connected to MongoDB!");
 }

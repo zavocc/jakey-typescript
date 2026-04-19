@@ -1,20 +1,19 @@
 import { Message } from "discord.js";
 
-export const REACT_MESSAGE_TOOL_SCHEMA = {
+export const REACT_MESSAGE_TOOL_SCHEMA =
+{
   type: "function",
-  function: {
-    name: "react_message",
-    description: "React to a message",
-    parameters: {
-      type: "object",
-      properties: {
-        emoji: {
-          type: "string",
-          description: "The emoji to react with, either a unicode, or custom emoji (if assigned) using <:emoji_name:emoji_id> format",
-        },
+  name: "react_message",
+  description: "React to a message",
+  parameters: {
+    type: "object",
+    properties: {
+      emoji: {
+        type: "string",
+        description: "The emoji to react with, either a unicode, or custom emoji (if assigned) using <:emoji_name:emoji_id> format",
       },
-      required: ["emoji"],
-    }
+    },
+    required: ["emoji"],
   }
 }
 

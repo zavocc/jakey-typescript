@@ -1,4 +1,4 @@
-import { ChatInputCommandInteraction, SlashCommandBuilder } from "discord.js";
+import { ChatInputCommandInteraction, MessageFlags, SlashCommandBuilder } from "discord.js";
 import { clearContext } from "../../lib/llm/chat/contextMemory";
 
 // for resetting preferences
@@ -17,14 +17,17 @@ export default {
     // Get user ID from the interaction
     const userId = interaction.user.id;
 
+    // Defer
+    await interaction.deferReply({ flags: MessageFlags.Ephemeral });
+
     // Clear the context for the user
     await clearContext(userId);
 
     if (interaction.options.getBoolean("preferences")) {
       await clearUserPreferences(userId);
-      await interaction.reply("Your context history and user preferences have been cleared.");
+      await interaction.editReply("Your context history and user preferences have been cleared.");
     } else {
-      await interaction.reply("Your context history has been cleared.");
+      await interaction.editReply("Your context history has been cleared.");
     }
   },
 };

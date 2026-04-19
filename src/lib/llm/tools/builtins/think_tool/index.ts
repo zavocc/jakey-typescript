@@ -1,23 +1,21 @@
 import { getSendableChannel } from "../../functions";
 import { Message, SendableChannels } from "discord.js";
 
-export const THINK_TOOL_SCHEMA = 
-  {
-    type: "function",
-    function: {
-      name: "think_tool",
-      description: "Tool to show thoughts before responding",
-      parameters: {
-        type: "object",
-        properties: {
-          thought: {
-            type: "string",
-            description: "The thought content to show to the user. Can be multiple sentences.",
-          },
-        },
-        required: ["thought"],
-      }
-  },
+export const THINK_TOOL_SCHEMA =
+{
+  type: "function",
+  name: "think_tool",
+  description: "Tool to show thoughts before responding",
+  parameters: {
+    type: "object",
+    properties: {
+      thought: {
+        type: "string",
+        description: "The thought content to show to the user. Can be multiple sentences.",
+      },
+    },
+    required: ["thought"],
+  }
 }
 
 export async function think_tool(discord_interaction: Message, params: { thought: string }): Promise<string> {

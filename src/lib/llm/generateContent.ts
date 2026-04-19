@@ -4,7 +4,7 @@ import type { Interactions } from '@google/genai';
 // DEBUG
 import { mkdir, writeFile } from 'fs/promises';
 
-type OutputShape = {
+export type OutputShape = {
   modelOutputs: Interactions.Content[],
   model_used: string,
   interactionID: string
@@ -12,34 +12,40 @@ type OutputShape = {
 
 export async function text_completion(
   model: string,
-  prompt: string,
+  prompt: string | Interactions.Content[],
   interactions_context_id?: string,
   system_prompt?: string,
   attachment_urls?: string[],
   additional_properties?: Record<string, any>,
 ): Promise<OutputShape> {
+  let constructedContent: Interactions.Content[];
+
   // Construct a prompt
-  const constructedContent: Interactions.Content[] = [];
+  if (typeof prompt === "string") {
+    constructedContent = [];
 
-  // Check if we have image attachments and is enabled and have attachment_urls set
-  // So we can push it as part of the prompt content pieces
-  if (attachment_urls && attachment_urls.length > 0) {
-    const attachmentMessages = attachment_urls.map((url) => ({
-      type: 'image' as const,
-      uri: url,
-      mime_type: undefined
-    }));
-    constructedContent.push(...attachmentMessages);
+    // Check if we have image attachments and is enabled and have attachment_urls set
+    // So we can push it as part of the prompt content pieces
+    if (attachment_urls && attachment_urls.length > 0) {
+      const attachmentMessages = attachment_urls.map((url) => ({
+        type: 'image' as const,
+        uri: url,
+        mime_type: undefined
+      }));
+      constructedContent.push(...attachmentMessages);
+    }
+
+    // Append the user's text prompt, if prompt is not empty
+    if (prompt.trim() !== '') {
+      constructedContent.push({
+        type: 'text' as const,
+        text: prompt,
+      });
+    }
+  } else {
+    // prompt is already an array (e.g. tool results), use directly
+    constructedContent = prompt;
   }
-
-  // Append the user's text prompt, if prompt? is not empty
-  if (prompt && prompt.trim() !== '') {
-    constructedContent.push({
-      type: 'text' as const,
-      text: prompt,
-    });
-  }
-
 
   let additionalParams;
   // Pass additional params if existed

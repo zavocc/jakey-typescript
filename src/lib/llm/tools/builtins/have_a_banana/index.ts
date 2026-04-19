@@ -2,16 +2,18 @@ import { getSendableChannel } from "../../functions";
 import { EmbedBuilder } from "discord.js";
 import { Message, SendableChannels } from "discord.js";
 
-export const HAVE_A_BANANA_TOOL_SCHEMA = 
-  {
-    type: "function",
-    function: {
-      name: "have_a_banana",
-      description: "Banana"
-  },
+export const HAVE_A_BANANA_TOOL_SCHEMA =
+{
+  type: "function",
+  name: "have_a_banana",
+  description: "Banana",
+  parameters: {
+    type: "object",
+    properties: {},
+  }
 }
 
-export async function have_a_banana(discord_interaction: Message, params: { }): Promise<string> {
+export async function have_a_banana(discord_interaction: Message, params: {}): Promise<string> {
   // We just send image of banana
   const messageChannel: SendableChannels = getSendableChannel(discord_interaction);
 
