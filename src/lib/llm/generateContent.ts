@@ -69,7 +69,7 @@ export async function text_completion(
   // Log possible outputs
   const debugDir = `${__dirname}/../../../harbour/debug`;
   await mkdir(debugDir, { recursive: true });
-  await writeFile(`${debugDir}/debug.json`, JSON.stringify(interactionsResult, null, 2));
+  await writeFile(`${debugDir}/debug.json`, JSON.stringify(interactionsResult.outputs, null, 2));
 
   return {
     modelOutputs: interactionsResult.outputs,

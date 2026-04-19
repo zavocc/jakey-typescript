@@ -5,6 +5,7 @@ import type { Message, SendableChannels } from 'discord.js';
 import { JAKEY_SYSTEM_PROMPT } from '../../../data/sysprompts';
 import { text_completion } from '../generateContent';
 import { loadPreferences } from '../../preferencesDBLoader';
+import { fileTypeFromBuffer } from 'file-type';
 
 // Tool loader
 import { fetchToolPack } from '../tools/utils';
@@ -73,25 +74,42 @@ export async function chatToLLM(
     // Process ALL outputs from the response first
     for (const output of response.modelOutputs) {
       // search results
-      if (output.type === 'google_search_call' && output.arguments.queries) {
+      if (output.type === 'google_search_result' && output.result) {
         // Iterate and join queries with comma
-        await messageChannel.send(`-# > Searched: ${output.arguments.queries.join(", ")}`);
+        await messageChannel.send(`-# > Used: Google Search`);
       }
-
-      if (output.type === 'google_search_result' && output.result)
-        console.log(output.result)
-
 
       // URL context
-      if (output.type === 'url_context_call' && output.arguments.urls) {
-        await messageChannel.send(`-# > Read: ${output.arguments.urls.join(", ")}`);
+      if (output.type === 'url_context_result' && output.result) {
+        await messageChannel.send(`-# > Used: Read ${output.result.length} URLs`);
       }
 
+      // Code Execution
+      if (output.type === 'code_execution_result' && output.result) {
+        await messageChannel.send(output.result)
+      }
 
       // text
       if (output.type === 'text') {
         await messageChannel.send(output.text);
       }
+
+      // images - base64
+      if (output.type === 'image' && output.data) {
+        const bufferParsed = Buffer.from(output.data, 'base64');
+        const mimeType = await fileTypeFromBuffer(bufferParsed);
+
+        await messageChannel.send({
+          files:
+            [
+              {
+                attachment: bufferParsed,
+                name: `image.${mimeType?.ext}`
+              }
+            ]
+        });
+      }
+
 
       // tool calls
       if (output.type === 'function_call') {

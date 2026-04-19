@@ -5,5 +5,8 @@ export const TOOL_SCHEMAS = [
   },
   {
     type: "url_context"
+  },
+  {
+    type: "code_execution"
   }
 ]
