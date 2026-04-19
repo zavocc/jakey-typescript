@@ -46,8 +46,18 @@ export async function clearContext(userId: string): Promise<void> {
     }
   } catch (error) {
     console.error(`Error deleting interaction for user ${userId}:`, error);
-  } finally {
-    // Delete the interaction from db
-    await collection.deleteOne({ userId });
   }
+
+  // Get interactions ID, if it caught an exception, great!
+  try {
+    if (context) {
+      await GoogleClient.interactions.get(context);
+    }
+  } catch (error) {
+    console.error(`Successfully deleted interaction for user ${userId}.`);
+  }
+
+  // Delete the interaction from db
+  await collection.deleteOne({ userId });
+
 }
