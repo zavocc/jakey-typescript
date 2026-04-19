@@ -72,14 +72,25 @@ export async function chatToLLM(
 
     // Process ALL outputs from the response first
     for (const output of response.modelOutputs) {
+      // search results
+      if (output.type === 'google_search_call' && output.arguments.queries) {
+        // Iterate and join queries with comma
+        await messageChannel.send(`-# > Searched: ${output.arguments.queries.join(", ")}`);
+      }
+
+      if (output.type === 'google_search_result' && output.result)
+        console.log(output.result)
+
+
+      // URL context
+      if (output.type === 'url_context_call' && output.arguments.urls) {
+        await messageChannel.send(`-# > Read: ${output.arguments.urls.join(", ")}`);
+      }
+
+
       // text
       if (output.type === 'text') {
         await messageChannel.send(output.text);
-      }
-
-      // search results
-      if (output.type === 'google_search_result') {
-        console.log("Searched for: ", output.result);
       }
 
       // tool calls

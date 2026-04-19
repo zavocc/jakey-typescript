@@ -19,7 +19,6 @@ export async function fetchToolPack(selectedTool: string): Promise<ToolPack> {
 
   if (selectedTool !== "Disabled") {
     const schemaS = await import(`./apis/${selectedTool}/schema.js`);
-    const functionS = await import(`./apis/${selectedTool}/index.js`);
 
     // check if schemaS have TOOL_HUMAN_NAME otherwise we skip this tool
     if (!schemaS.TOOL_HUMAN_NAME) {
@@ -30,23 +29,30 @@ export async function fetchToolPack(selectedTool: string): Promise<ToolPack> {
       };
     }
 
-    // Look-up all exported functions only
-    const functions = Object.fromEntries(
-      Object.entries(functionS)
-        // Ignore the key as we can only check if the value is function
-        // Returns after running Object.entries: [["web_search", async () => {}]]
-        .filter(([, valueFunction]) => typeof valueFunction === "function")
-    ) as Record<string, ToolHandler>;
-
     allSchemas = [
       ...allSchemas,
       ...schemaS.TOOL_SCHEMAS
     ];
 
-    allTools = {
-      ...allTools,
-      ...functions,
-    };
+    // Try to import functions — if the tool is schema-only (no index.js), skip
+    try {
+      const functionS = await import(`./apis/${selectedTool}/index.js`);
+
+      // Look-up all exported functions only
+      const functions = Object.fromEntries(
+        Object.entries(functionS)
+          // Ignore the key as we can only check if the value is function
+          // Returns after running Object.entries: [["web_search", async () => {}]]
+          .filter(([, valueFunction]) => typeof valueFunction === "function")
+      ) as Record<string, ToolHandler>;
+
+      allTools = {
+        ...allTools,
+        ...functions,
+      };
+    } catch {
+      // Schema-only tool (e.g. GoogleSearch) — no functions to import
+    }
   }
 
   return {
