@@ -57,6 +57,7 @@ export async function text_completion(
     ...additionalParams,
     model: model,
     input: constructedContent,
+    stream: false,
     system_instruction: system_prompt,
     previous_interaction_id: interactions_context_id ?? undefined
   })

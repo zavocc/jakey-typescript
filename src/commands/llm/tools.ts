@@ -1,4 +1,3 @@
-import { savePreferences } from "../../lib/preferencesDBLoader";
 import {
   AutocompleteInteraction,
   ChatInputCommandInteraction,
@@ -6,8 +5,9 @@ import {
   SlashCommandBuilder,
   SlashCommandSubcommandBuilder,
 } from "discord.js";
-import { fetchListAvailableTool } from "../../lib/llm/tools/utils"; 
-import { clearContext } from "../../lib/llm/chat/contextMemory";
+import { fetchListAvailableTool } from "../../lib/llm/tools/utils";
+import { loadPreferences, savePreferences } from "../../lib/preferencesDBLoader";
+import { DeleteGeminiInteractionID } from "../../lib/llm/geminiInteractionsMgmt";
 
 export default {
   data: new SlashCommandBuilder()
@@ -34,7 +34,7 @@ export default {
     }
 
     const availableTools = await fetchListAvailableTool();
-    
+
     // Map
     const query = focusedOption.value.toLowerCase();
     const matches = availableTools
@@ -51,25 +51,35 @@ export default {
     // Perform operations to set the tool based on user input
     const subcmd = interaction.options.getSubcommand();
 
+    // Obtain current Gemini interaction ID so we can clear context
+    const curGeminiInteractionID = await loadPreferences(interaction.user.id, "current_interaction_id");
+
     if (subcmd == "set") {
       const selectedTool = interaction.options.getString("tool_name", true);
+
+      // Defer
+      await interaction.deferReply({ flags: MessageFlags.Ephemeral });
 
       // Obtain tool human name to show for user UX, otherwise fallback to actual tool name value from directories
       const availableTools = await fetchListAvailableTool();
       const selectedToolInfo = availableTools.find((tool) => tool.name === selectedTool);
       const selectedToolHumanName = selectedToolInfo?.human_name ?? selectedTool;
 
-      console.log(`Selected tool: ${selectedTool}`);
-
-      // Defer and save
-      await interaction.deferReply({ flags: MessageFlags.Ephemeral });
+      // Clear chat and set tools
+      try {
+        if (curGeminiInteractionID) {
+          await DeleteGeminiInteractionID(curGeminiInteractionID, interaction.user.id);
+        }
+      } catch (error) {
+        console.error(`Error deleting interaction for user ${interaction.user.id}:`, error);
+        throw error;
+      }
+      await savePreferences(interaction.user.id, "current_interaction_id", null);
       await savePreferences(interaction.user.id, "user_choice_tool", selectedTool);
 
-      // Clear context to avoid tool schema mismatch with previous context
-      await clearContext(interaction.user.id);
-
       // Done
-      await interaction.editReply({content: `Tools are loaded from **${selectedToolHumanName}** and chat is reset.`});
+      console.log(`Selected tool: ${selectedTool}`);
+      await interaction.editReply({ content: `Tools are loaded from **${selectedToolHumanName}** and chat is reset.` });
     }
   }
 };

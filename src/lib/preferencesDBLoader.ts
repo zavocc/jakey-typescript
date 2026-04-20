@@ -46,12 +46,21 @@ async function savePreferences<K extends PreferenceKey>(userId: string, prefName
   }
 
   const collection = await getPrefsCollection();
-  const update = { [prefName]: data } as Pick<Preferences, K>;
-  await collection.updateOne(
-    { user_id: userId },
-    { $set: update },
-    { upsert: true }
-  );
+
+  // If null, remove the field from the document entirely
+  if (data === null) {
+    await collection.updateOne(
+      { user_id: userId },
+      { $unset: { [prefName]: "" } },
+      { upsert: true }
+    );
+  } else {
+    await collection.updateOne(
+      { user_id: userId },
+      { $set: { [prefName]: data } as Pick<Preferences, K> },
+      { upsert: true }
+    );
+  }
 }
 
 // reset user preferences

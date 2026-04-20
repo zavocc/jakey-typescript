@@ -1,10 +1,9 @@
-import { loadContext, saveContext } from './contextMemory';
 import { getModelProps } from './modelsSelection';
 import type { ModelProps } from '../../../types/schemas';
 import type { Message, SendableChannels } from 'discord.js';
 import { JAKEY_SYSTEM_PROMPT } from '../../../data/sysprompts';
 import { text_completion } from '../generateContent';
-import { loadPreferences } from '../../preferencesDBLoader';
+import { loadPreferences, savePreferences } from '../../preferencesDBLoader';
 import { fileTypeFromBuffer } from 'file-type';
 
 // Tool loader
@@ -26,7 +25,7 @@ export async function chatToLLM(
   const modelProps: ModelProps = await getModelProps(discord_user_id);
 
   // Load context and it's associated thread if existed
-  let context = await loadContext(discord_user_id);
+  let context = await loadPreferences(discord_user_id, "current_interaction_id");
 
   // Check if we have attachments but the model doesn't support it
   if (attachment_urls && attachment_urls.length > 0 && !modelProps.enable_files) {
@@ -87,6 +86,11 @@ export async function chatToLLM(
       // Code Execution
       if (output.type === 'code_execution_result' && output.result) {
         await messageChannel.send(output.result)
+      }
+
+      // MCP Server remote
+      if (output.type === 'mcp_server_tool_call') {
+        await messageChannel.send(`-# > Used: ${output.name} (REMOTE)`);
       }
 
       // text
@@ -162,7 +166,7 @@ export async function chatToLLM(
   }
 
   // Save context back to db
-  await saveContext(discord_user_id, interactionIDStored);
+  await savePreferences(discord_user_id, "current_interaction_id", interactionIDStored);
 
   // Send model info
   await messageChannel.send(`-# [DEBUG] Model used: ${response.model_used}`);

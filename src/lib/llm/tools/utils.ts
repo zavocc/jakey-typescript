@@ -13,7 +13,7 @@ type ToolPack = {
 export async function fetchToolPack(selectedTool: string): Promise<ToolPack> {
   // if selectedTool name is "Disabled", we can only import built-in schemas from builtins/
 
-  // Schemas
+  // Load built-in schemas by default and tool functions
   let allSchemas: Array<unknown> = [...BUILTIN_TOOL_SCHEMAS];
   let allTools: Record<string, ToolHandler> = { ...BuiltInToolFunctions };
 
@@ -29,29 +29,41 @@ export async function fetchToolPack(selectedTool: string): Promise<ToolPack> {
       };
     }
 
-    allSchemas = [
-      ...allSchemas,
-      ...schemaS.TOOL_SCHEMAS
-    ];
+    // If any schema entry is an MCP server, disable builtin tools and clear allSchemas and allTools
+    const hasMcpServer = Array.isArray(schemaS.TOOL_SCHEMAS) &&
+      schemaS.TOOL_SCHEMAS.some((s: any) => s.type === "mcp_server");
+
+    if (hasMcpServer) {
+      allSchemas = [...schemaS.TOOL_SCHEMAS];
+      allTools = {};
+    } else {
+      allSchemas = [
+        ...allSchemas,
+        ...schemaS.TOOL_SCHEMAS
+      ];
+    }
 
     // Try to import functions — if the tool is schema-only (no index.js), skip
-    try {
-      const functionS = await import(`./apis/${selectedTool}/index.js`);
+    // This will only load functions if there is no MCP Servers (remote), otherwise schema-only
+    if (!hasMcpServer) {
+      try {
+        const functionS = await import(`./apis/${selectedTool}/index.js`);
 
-      // Look-up all exported functions only
-      const functions = Object.fromEntries(
-        Object.entries(functionS)
-          // Ignore the key as we can only check if the value is function
-          // Returns after running Object.entries: [["web_search", async () => {}]]
-          .filter(([, valueFunction]) => typeof valueFunction === "function")
-      ) as Record<string, ToolHandler>;
+        // Look-up all exported functions only
+        const functions = Object.fromEntries(
+          Object.entries(functionS)
+            // Ignore the key as we can only check if the value is function
+            // Returns after running Object.entries: [["web_search", async () => {}]]
+            .filter(([, valueFunction]) => typeof valueFunction === "function")
+        ) as Record<string, ToolHandler>;
 
-      allTools = {
-        ...allTools,
-        ...functions,
-      };
-    } catch {
-      // Schema-only tool (e.g. GoogleSearch) — no functions to import
+        allTools = {
+          ...allTools,
+          ...functions,
+        };
+      } catch {
+        // Schema-only tool (e.g. GoogleSearch) — no functions to import
+      }
     }
   }
 

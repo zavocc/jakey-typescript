@@ -4,10 +4,13 @@
             "model_id": "gemini-3-flash-preview",
             "model_alias": "Gemini 3 Flash Preview",
             "enable_files": true,
-            "enable_tools": true,
-            "additional_params": {
-                "store": true
-            }
+            "enable_tools": true
+        },
+        {
+            "model_id": "gemini-2.5-flash",
+            "model_alias": "Gemini 2.5",
+            "enable_files": true,
+            "enable_tools": true
         }
     ]
 }

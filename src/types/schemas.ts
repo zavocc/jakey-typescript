@@ -22,7 +22,8 @@ export function validateOrThrow<T>(label: string, schema: z.ZodType<T>, data: un
 // for preferences
 export const PreferencesSchema = z.object({
   user_choice_model_alias: z.string(),
-  user_choice_tool: z.string().optional()
+  user_choice_tool: z.string().optional(),
+  current_interaction_id: z.string().nullable().optional()
 });
 
 // models.json
