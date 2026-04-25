@@ -5,7 +5,7 @@ import {
   SlashCommandBuilder,
   SlashCommandSubcommandBuilder,
 } from "discord.js";
-import { fetchListAvailableTool } from "../../lib/llm/tools/utils";
+import { fetchListAvailableTool } from "../../tools/utils";
 import { loadPreferences, savePreferences } from "../../lib/preferencesDBLoader";
 import { DeleteGeminiInteractionID } from "../../lib/llm/geminiInteractionsMgmt";
 

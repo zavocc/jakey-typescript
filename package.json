@@ -19,6 +19,7 @@
     "discord.js": "^14.26.3",
     "file-type": "^22.0.1",
     "mongodb": "~7.1.1",
+    "wavefile": "^11.0.0",
     "zod": "^4.3.6"
   },
   "devDependencies": {

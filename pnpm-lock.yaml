@@ -20,6 +20,9 @@ importers:
       mongodb:
         specifier: ~7.1.1
         version: 7.1.1
+      wavefile:
+        specifier: ^11.0.0
+        version: 11.0.0
       zod:
         specifier: ^4.3.6
         version: 4.3.6
@@ -532,6 +535,11 @@ packages:
     resolution: {integrity: sha512-sC+b0tB1whOCzbtlx20fx3WgCXwkW627p4EA9uM+/tNNPkSS+eSEld6pAs9nDv7WbY1UUljBMYPtu9BCOrCWKA==}
     engines: {node: '>=18.17'}
 
+  wavefile@11.0.0:
+    resolution: {integrity: sha512-/OBiAALgWU24IG7sC84cDO/KfFuvajWc5Uec0oV2zrpOOZZDgGdOwHwgEzOrwh8jkubBk7PtZfQBIcI1OaE5Ng==}
+    engines: {node: '>=8'}
+    hasBin: true
+
   web-streams-polyfill@3.3.3:
     resolution: {integrity: sha512-d2JWLCivmZYTSIoge9MsgFCZrt571BikcWGYkjC1khllbTeDlGqZ2D8vD8E/lJa8WGWbb7Plm8/XJYV7IJHZZw==}
     engines: {node: '>= 8'}
@@ -1013,6 +1021,8 @@ snapshots:
   undici-types@7.19.2: {}
 
   undici@6.24.1: {}
+
+  wavefile@11.0.0: {}
 
   web-streams-polyfill@3.3.3: {}
 

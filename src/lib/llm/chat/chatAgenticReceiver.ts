@@ -7,7 +7,7 @@ import { loadPreferences, savePreferences } from '../../preferencesDBLoader';
 import { fileTypeFromBuffer } from 'file-type';
 
 // Tool loader
-import { fetchToolPack } from '../tools/utils';
+import { fetchToolPack } from '../../../tools/utils';
 
 export async function chatToLLM(
   prompt: string,
