@@ -1,4 +1,4 @@
-import { getConfigJsonKey } from "../../../configuratorJSON";
+import { getConfigJsonKey } from "../../../lib/configuratorJSON";
 import { Message } from "discord.js";
 
 export async function web_search(discord_interaction: Message, params: { query: string }): Promise<string> {
