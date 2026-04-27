@@ -9,6 +9,18 @@ import { fileTypeFromBuffer } from 'file-type';
 // Tool loader
 import { fetchToolPack } from '../../../tools/utils';
 
+async function sendChunkedMessage(
+  messageChannel: SendableChannels,
+  text: string,
+  chunkSize = 2000,
+): Promise<void> {
+  if (!text.length) return;
+
+  for (let i = 0; i < text.length; i += chunkSize) {
+    await messageChannel.send(text.slice(i, i + chunkSize));
+  }
+}
+
 export async function chatToLLM(
   prompt: string,
   discord_user_id: string,
@@ -85,7 +97,7 @@ export async function chatToLLM(
 
       // Code Execution
       if (output.type === 'code_execution_result' && output.result) {
-        await messageChannel.send(output.result)
+        await sendChunkedMessage(messageChannel, output.result);
       }
 
       // MCP Server remote
@@ -95,7 +107,7 @@ export async function chatToLLM(
 
       // text
       if (output.type === 'text') {
-        await messageChannel.send(output.text);
+        await sendChunkedMessage(messageChannel, output.text);
       }
 
       // images - base64
