@@ -1,7 +1,7 @@
 import { readdir } from "node:fs/promises";
 import path from "node:path";
 import { Message } from "discord.js";
-import { BUILTIN_TOOL_SCHEMAS, BuiltInToolFunctions } from "./builtins";
+import { fetchBuiltInToolPack } from "./builtins";
 
 type ToolHandler = (discord_interaction: Message, params: any) => Promise<string>;
 
@@ -14,8 +14,9 @@ export async function fetchToolPack(selectedTool: string): Promise<ToolPack> {
   // if selectedTool name is "Disabled", we can only import built-in schemas from builtins/
 
   // Load built-in schemas by default and tool functions
-  let allSchemas: Array<unknown> = [...BUILTIN_TOOL_SCHEMAS];
-  let allTools: Record<string, ToolHandler> = { ...BuiltInToolFunctions };
+  const builtInToolPack = await fetchBuiltInToolPack();
+  let allSchemas: Array<unknown> = [...builtInToolPack.schemas];
+  let allTools: Record<string, ToolHandler> = { ...builtInToolPack.functions };
 
   if (selectedTool !== "Disabled") {
     const schemaS = await import(`./apis/${selectedTool}/schema.js`);
