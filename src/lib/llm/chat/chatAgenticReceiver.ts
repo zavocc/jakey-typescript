@@ -9,6 +9,19 @@ import { loadPreferences } from '../../preferencesDBLoader';
 // Tool loader
 import { fetchToolPack } from '../tools/utils';
 
+async function sendChunkedMessage(
+  messageChannel: SendableChannels,
+  text: string,
+  chunkSize = 2000,
+): Promise<void> {
+  if (!text.length) return;
+
+  for (let i = 0; i < text.length; i += chunkSize) {
+    await messageChannel.send(text.slice(i, i + chunkSize));
+  }
+}
+
+
 export async function chatToLLM(
   prompt: string,
   discord_user_id: string,
@@ -139,7 +152,7 @@ export async function chatToLLM(
   }
 
   // Reply to user
-  await messageChannel.send(response.modelResponse.content);
+  await sendChunkedMessage(messageChannel, response.modelResponse.content);
 
   // Send model info
   await messageChannel.send(`-# [DEBUG] Model used: ${response.model_used}`);
