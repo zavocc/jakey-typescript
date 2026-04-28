@@ -1,7 +1,17 @@
-// Mostly taken from https://discordjs.guide/legacy/app-creation/deploying-commands
-// But with casting and other typescript-specific stuff
+/**  
+  For more information, see [1]
 
-import { Client, GatewayIntentBits, REST, Routes } from "discord.js";
+  By default, this command deploys commands across all servers thru [2]
+  
+  Any previously deployed commands that is scoped through guilds as documented in [3] requires manual deletion to ensure sync 
+  This code does not have guild-specific registration and deletion however, so this script assumes no guild-specific commands are registered before.
+
+  [1] https://discordjs.guide/legacy/app-creation/deploying-commands
+  [2] https://discordjs.guide/legacy/app-creation/deploying-commands#global-commands
+  [3] https://discordjs.guide/legacy/app-creation/deploying-commands#guild-commands
+*/
+
+import { REST, Routes } from "discord.js";
 import { app_id, token } from "../config.json";
 import fs from "node:fs";
 import path from "node:path";
@@ -50,33 +60,9 @@ for (let i = 0; i < commandFilePaths.length; i++) {
 // Construct and prepare an instance of the REST module
 const rest = new REST().setToken(token);
 
-async function clearGuildCommands() {
-  const client = new Client({
-    intents: [GatewayIntentBits.Guilds],
-  });
-
-  try {
-    await client.login(token);
-    await client.guilds.fetch(); // Fetch guilds to populate the cache and clear commands for each guild
-
-    for (const guildId of client.guilds.cache.keys()) {
-      await rest.put(Routes.applicationGuildCommands(app_id, guildId), {
-        body: [],
-      });
-      console.log(`Cleared guild application (/) commands for ${guildId}.`);
-    }
-  } finally {
-    client.destroy();
-  }
-}
-
 // and deploy your commands!
 (async () => {
   try {
-    await clearGuildCommands();
-    await rest.put(Routes.applicationCommands(app_id), { body: [] });
-    console.log("Cleared global application (/) commands.");
-
     console.log(
       `Started refreshing ${commands.length} application (/) commands.`,
     );
