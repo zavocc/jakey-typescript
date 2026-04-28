@@ -26,24 +26,31 @@ const botClient: Client = new Client({
 botClient.commands = new Collection();
 
 const foldersPath = path.join(__dirname, "commands");
-const commandFolders = fs.readdirSync(foldersPath);
+const commandFilePaths: string[] = [foldersPath];
 
-for (const folder of commandFolders) {
-  const commandsPath = path.join(foldersPath, folder);
-  const commandFiles = fs
-    .readdirSync(commandsPath)
-    .filter((file) => file.endsWith(".ts") || file.endsWith(".js"));
-  for (const file of commandFiles) {
-    const filePath = path.join(commandsPath, file);
-    const loaded = require(filePath);
+// Recursively read command files from the commands directory and subdirectories
+for (let i = 0; i < commandFilePaths.length; i++) {
+  const currentPath = commandFilePaths[i];
+  const pathStats = fs.statSync(currentPath);
+
+  if (pathStats.isDirectory()) {
+    const entries = fs.readdirSync(currentPath);
+    for (const entry of entries) {
+      commandFilePaths.push(path.join(currentPath, entry));
+    }
+    continue;
+  }
+
+  if (pathStats.isFile() && (currentPath.endsWith(".ts") || currentPath.endsWith(".js"))) {
+    const loaded = require(currentPath);
     const command = loaded.default ?? loaded;
     // Set a new item in the Collection with the key as the command name and the value as the exported module
     if ("data" in command && "execute" in command) {
       botClient.commands.set(command.data.name, command);
-      console.log(`[INFO] Loaded command: ${command.data.name} from ${filePath}`);
+      console.log(`[INFO] Loaded command: ${command.data.name} from ${currentPath}`);
     } else {
       console.log(
-        `[WARNING] The command at ${filePath} is missing a required "data" or "execute" property.`,
+        `[WARNING] The command at ${currentPath} is missing a required "data" or "execute" property.`,
       );
     }
   }

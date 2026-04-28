@@ -2,7 +2,7 @@ import { getModelProps } from './modelsSelection';
 import type { ModelProps } from '../../../types/schemas';
 import type { Message, SendableChannels } from 'discord.js';
 import { JAKEY_SYSTEM_PROMPT } from '../../../data/sysprompts';
-import { text_completion } from '../generateContent';
+import { text_chat_completion } from '../generateContent';
 import { loadPreferences, savePreferences } from '../../preferencesDBLoader';
 import { fileTypeFromBuffer } from 'file-type';
 
@@ -67,7 +67,7 @@ export async function chatToLLM(
   // Generate content
   let interactionIDStored: string | undefined;
   let toolHasDone = false;
-  let response = await text_completion(
+  let response = await text_chat_completion(
     modelProps.model_id,
     prompt,
     context ?? undefined,
@@ -146,7 +146,7 @@ export async function chatToLLM(
 
         // Rerun with tool result — use the interaction ID from the function call response
         // so the API sees the function result as a continuation of the correct turn
-        response = await text_completion(
+        response = await text_chat_completion(
           modelProps.model_id,
           [
             {

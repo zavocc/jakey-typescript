@@ -2,11 +2,16 @@ import {
   AutocompleteInteraction,
   ChatInputCommandInteraction,
   Collection,
+  MessageContextMenuCommandInteraction,
 } from "discord.js";
+
+type BotCommandInteraction =
+  | ChatInputCommandInteraction
+  | MessageContextMenuCommandInteraction;
 
 type BotCommand = {
   data: { name: string };
-  execute: (interaction: ChatInputCommandInteraction) => Promise<void>;
+  execute: (interaction: BotCommandInteraction) => Promise<void>;
   autocomplete?: (interaction: AutocompleteInteraction) => Promise<void>;
 };
 

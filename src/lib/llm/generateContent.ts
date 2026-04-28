@@ -1,5 +1,6 @@
 import { GoogleClient } from './providerClients';
 import type { Interactions } from '@google/genai';
+import { WaveFile } from 'wavefile';
 
 // DEBUG
 import { mkdir, writeFile } from 'fs/promises';
@@ -45,7 +46,7 @@ export type OutputShape = {
   interactionID: string
 }
 
-export async function text_completion(
+export async function text_chat_completion(
   model: string,
   prompt: string | Interactions.Content[],
   interactions_context_id?: string,
@@ -117,4 +118,53 @@ export async function text_completion(
     model_used: interactionsResult.model ?? "Not specified",
     interactionID: interactionsResult.id
   };
+}
+
+export async function tts_completion(
+  prompt: string
+): Promise<Buffer> {
+  const audioResult = await GoogleClient.models.generateContent({
+    model: "gemini-3.1-flash-tts-preview",
+    contents: [
+      {
+        parts: [
+          {
+            text: prompt
+          }
+        ]
+      }
+    ],
+    config: {
+      responseModalities: ['AUDIO'],
+      speechConfig: {
+        voiceConfig: {
+          prebuiltVoiceConfig: {
+            voiceName: 'Iapetus'
+          }
+        }
+      }
+    }
+  })
+
+
+  // Get audio data
+  const audioRawData = audioResult.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data;
+  if (!audioRawData) {
+    throw new Error('No audio data received from the model.');
+  }
+
+  const pcmBuffer = Buffer.from(audioRawData, 'base64');
+  if (pcmBuffer.length % 2 !== 0) {
+    throw new Error('Received invalid 16-bit PCM audio data.');
+  }
+
+  const samples = new Int16Array(pcmBuffer.length / 2);
+  for (let i = 0; i < samples.length; i++) {
+    samples[i] = pcmBuffer.readInt16LE(i * 2);
+  }
+
+  const wav = new WaveFile();
+  wav.fromScratch(1, 24000, '16', samples);
+
+  return Buffer.from(wav.toBuffer());
 }

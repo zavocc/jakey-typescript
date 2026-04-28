@@ -22,7 +22,10 @@ module.exports = {
       return;
     }
 
-    if (!interaction.isChatInputCommand()) return;
+    if (
+      !interaction.isChatInputCommand() &&
+      !interaction.isMessageContextMenuCommand()
+    ) return;
 
     const command = interaction.client.commands.get(interaction.commandName);
     if (!command) {

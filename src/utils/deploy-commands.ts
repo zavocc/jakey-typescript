@@ -10,24 +10,29 @@ const commands = [];
 const commandNames = new Set<string>();
 // Grab all the command folders from the commands directory you created earlier
 const foldersPath = path.join(__dirname, "../commands");
-const commandFolders = fs.readdirSync(foldersPath);
+const commandFilePaths: string[] = [foldersPath];
 
-for (const folder of commandFolders) {
-  // Grab all the command files from the commands directory you created earlier
-  const commandsPath = path.join(foldersPath, folder);
-  const commandFiles = fs
-    .readdirSync(commandsPath)
-    .filter((file) => file.endsWith(".ts"));
-  // Grab the SlashCommandBuilder#toJSON() output of each command's data for deployment
-  for (const file of commandFiles) {
-    const filePath = path.join(commandsPath, file);
-    const loaded = require(filePath);
+for (let i = 0; i < commandFilePaths.length; i++) {
+  const currentPath = commandFilePaths[i];
+  const pathStats = fs.statSync(currentPath);
+
+  if (pathStats.isDirectory()) {
+    const entries = fs.readdirSync(currentPath);
+    for (const entry of entries) {
+      commandFilePaths.push(path.join(currentPath, entry));
+    }
+    continue;
+  }
+
+  if (pathStats.isFile() && currentPath.endsWith(".ts")) {
+    // Grab the SlashCommandBuilder#toJSON() output of each command's data for deployment
+    const loaded = require(currentPath);
     const command = loaded.default ?? loaded;
     if ("data" in command && "execute" in command) {
       const commandJson = command.data.toJSON();
       if (commandNames.has(commandJson.name)) {
         console.log(
-          `[WARNING] Duplicate command name "${commandJson.name}" at ${filePath}; skipping duplicate.`,
+          `[WARNING] Duplicate command name "${commandJson.name}" at ${currentPath}; skipping duplicate.`,
         );
         continue;
       }
@@ -36,7 +41,7 @@ for (const folder of commandFolders) {
       commands.push(commandJson);
     } else {
       console.log(
-        `[WARNING] The command at ${filePath} is missing a required "data" or "execute" property.`,
+        `[WARNING] The command at ${currentPath} is missing a required "data" or "execute" property.`,
       );
     }
   }
