@@ -1,4 +1,4 @@
-import "./lib/initEnv.js"
+import "./lib/initEnv.js";
 import {
   Client,
   Collection,
@@ -76,11 +76,11 @@ async function bootstrap() {
   await loadCommands();
   await loadEvents();
   await startServices();
-  if (!process.env.TOKEN) {
-    console.error("Token not found in config.json");
+  if (!process.env.DISCORD_TOKEN) {
+    console.error("DISCORD_TOKEN not found in environment variables.");
     process.exit(1);
   }
-  await botClient.login(process.env.TOKEN);
+  await botClient.login(process.env.DISCORD_TOKEN);
 }
 
 bootstrap().catch((error) => {

@@ -1,7 +1,6 @@
 import { ChatInputCommandInteraction, MessageFlags, SlashCommandBuilder } from "discord.js";
 // for resetting preferences
-import { loadPreferences, savePreferences, clearUserPreferences } from "../../lib/preferencesDBLoader.js";
-import { DeleteGeminiInteractionID } from "../../lib/llm/geminiInteractionsMgmt.js";
+import { savePreferences, clearUserPreferences } from "../../lib/preferencesDBLoader.js";
 
 export default {
   data: new SlashCommandBuilder()
@@ -18,18 +17,6 @@ export default {
 
     // Defer
     await interaction.deferReply({ flags: MessageFlags.Ephemeral });
-
-    // First, we obtain the current interaction ID if it exists
-    const curInteractionID = await loadPreferences(userId, "current_interaction_id");
-
-    // Delete the interaction from Google AI Studio
-    try {
-      if (curInteractionID) {
-        await DeleteGeminiInteractionID(curInteractionID, userId);
-      }
-    } catch (error) {
-      console.error(`Error deleting interaction for user ${userId}:`, error);
-    }
 
     if (interaction.options.getBoolean("preferences")) {
       await clearUserPreferences(userId);

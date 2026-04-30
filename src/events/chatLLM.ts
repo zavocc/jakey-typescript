@@ -1,5 +1,5 @@
 import { Events, Message } from "discord.js";
-import { chatToLLM } from "../lib/llm/chat/chatAgenticReceiver.js";
+import { chatToLLM } from "../llm/chat/chatAgenticReceiver.js";
 
 export default {
   name: Events.MessageCreate,

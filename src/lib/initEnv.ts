@@ -1,6 +1,6 @@
 import { config } from "dotenv";
 
-config()
+config();
 
 const requiredRtVariables = [
   "DISCORD_TOKEN",

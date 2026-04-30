@@ -1,13 +1,13 @@
 import { getModelProps } from "./modelsSelection.js";
-import type { ModelProps } from "../../../types/schemas.js";
+import type { ModelProps } from "../../types/schemas.js";
 import type { Message, SendableChannels } from 'discord.js';
-import { JAKEY_SYSTEM_PROMPT } from "../../../data/sysprompts.js";
+import { JAKEY_SYSTEM_PROMPT } from "../../data/sysprompts.js";
 import { text_chat_completion } from "../generateContent.js";
-import { loadPreferences, savePreferences } from "../../preferencesDBLoader.js";
+import { loadPreferences, savePreferences } from "../../lib/preferencesDBLoader.js";
 import { fileTypeFromBuffer } from 'file-type';
 
 // Tool loader
-import { fetchToolPack } from "../../../tools/utils.js";
+import { fetchToolPack } from "../tools/utils.js";
 
 async function sendChunkedMessage(
   messageChannel: SendableChannels,
@@ -37,7 +37,7 @@ export async function chatToLLM(
   const modelProps: ModelProps = await getModelProps(discord_user_id);
 
   // Load context and it's associated thread if existed
-  let context = await loadPreferences(discord_user_id, "current_interaction_id");
+  const context = await loadPreferences(discord_user_id, "current_interaction_id");
 
   // Check if we have attachments but the model doesn't support it
   if (attachment_urls && attachment_urls.length > 0 && !modelProps.enable_files) {

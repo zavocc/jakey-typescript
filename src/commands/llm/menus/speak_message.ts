@@ -4,7 +4,7 @@ import {
   MessageContextMenuCommandInteraction,
   MessageFlags,
 } from "discord.js";
-import { tts_completion } from "../../../lib/llm/generateContent.js";
+import { tts_completion } from "../../../llm/generateContent.js";
 import { GEMINI_TEXT_TO_SPEECH_SYSTEM_PROMPT } from "../../../data/sysprompts.js";
 
 export default {
@@ -29,7 +29,7 @@ export default {
     // Generate speech
     const prompt = `
     ${GEMINI_TEXT_TO_SPEECH_SYSTEM_PROMPT}
-    
+
     ## Message content:
     ${targetMessage.content}
     `

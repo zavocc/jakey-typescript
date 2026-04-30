@@ -1,4 +1,5 @@
 import { startDB, stopDB } from "./mongodb/index.js";
+import { GoogleGenAI } from '@google/genai';
 
 export async function startServices(): Promise<void> {
   // database
@@ -11,3 +12,8 @@ export async function stopServices(): Promise<void> {
   await stopDB();
   console.log("All services stopped successfully.");
 }
+
+// genai
+export const GoogleClient = new GoogleGenAI({
+  apiKey: process.env.GEMINI_API_KEY
+});

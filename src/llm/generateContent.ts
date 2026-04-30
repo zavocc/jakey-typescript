@@ -1,10 +1,6 @@
-import { GoogleClient } from "./providerClients.js";
+import { GoogleClient } from '../lib/services/services.js';
 import type { Interactions } from '@google/genai';
-import { WaveFile } from 'wavefile';
-
-// DEBUG
-import { mkdir, writeFile } from "node:fs/promises";
-import { fileURLToPath } from "node:url";
+import WaveFile from 'wavefile';
 
 type MediaType = 'image' | 'audio' | 'video' | 'document';
 
@@ -53,7 +49,7 @@ export async function text_chat_completion(
   interactions_context_id?: string,
   system_prompt?: string,
   attachment_urls?: string[],
-  additional_properties?: Record<string, any>,
+  additional_properties?: Record<string, unknown>,
 ): Promise<OutputShape> {
   let constructedContent: Interactions.Content[];
 
@@ -109,11 +105,6 @@ export async function text_chat_completion(
     throw new Error('No output received from the model.');
   }
 
-  // Log possible outputs
-  const debugDir = fileURLToPath(new URL("../../../harbour/debug/", import.meta.url));
-  await mkdir(debugDir, { recursive: true });
-  await writeFile(`${debugDir}/debug.json`, JSON.stringify(interactionsResult.outputs, null, 2));
-
   return {
     modelOutputs: interactionsResult.outputs,
     model_used: interactionsResult.model ?? "Not specified",
@@ -164,7 +155,7 @@ export async function tts_completion(
     samples[i] = pcmBuffer.readInt16LE(i * 2);
   }
 
-  const wav = new WaveFile();
+  const wav = new WaveFile.WaveFile();
   wav.fromScratch(1, 24000, '16', samples);
 
   return Buffer.from(wav.toBuffer());

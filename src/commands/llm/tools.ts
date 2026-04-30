@@ -5,9 +5,8 @@ import {
   SlashCommandBuilder,
   SlashCommandSubcommandBuilder,
 } from "discord.js";
-import { fetchListAvailableTool } from "../../tools/utils.js";
-import { loadPreferences, savePreferences } from "../../lib/preferencesDBLoader.js";
-import { DeleteGeminiInteractionID } from "../../lib/llm/geminiInteractionsMgmt.js";
+import { fetchListAvailableTool } from "../../llm/tools/utils.js";
+import { savePreferences } from "../../lib/preferencesDBLoader.js";
 
 export default {
   data: new SlashCommandBuilder()
@@ -51,9 +50,6 @@ export default {
     // Perform operations to set the tool based on user input
     const subcmd = interaction.options.getSubcommand();
 
-    // Obtain current Gemini interaction ID so we can clear context
-    const curGeminiInteractionID = await loadPreferences(interaction.user.id, "current_interaction_id");
-
     if (subcmd == "set") {
       const selectedTool = interaction.options.getString("tool_name", true);
 
@@ -65,15 +61,6 @@ export default {
       const selectedToolInfo = availableTools.find((tool) => tool.name === selectedTool);
       const selectedToolHumanName = selectedToolInfo?.human_name ?? selectedTool;
 
-      // Clear chat and set tools
-      try {
-        if (curGeminiInteractionID) {
-          await DeleteGeminiInteractionID(curGeminiInteractionID, interaction.user.id);
-        }
-      } catch (error) {
-        console.error(`Error deleting interaction for user ${interaction.user.id}:`, error);
-        throw error;
-      }
       await savePreferences(interaction.user.id, "current_interaction_id", null);
       await savePreferences(interaction.user.id, "user_choice_tool", selectedTool);
 

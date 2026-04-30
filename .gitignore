@@ -1,6 +1,5 @@
 dist/
 node_modules/
-src/config.json
 **/harbour/*
 package-lock.json
 .codex
