@@ -1,8 +1,7 @@
 import { Events, Message } from "discord.js";
-import { chatToLLM } from "../lib/llm/chat/chatAgenticReceiver";
+import { chatToLLM } from "../lib/llm/chat/chatAgenticReceiver.js";
 
-// CommonJS export
-module.exports = {
+export default {
   name: Events.MessageCreate,
   async execute(message: Message) {
     if (message.author.bot) return; // Ignore messages from bots

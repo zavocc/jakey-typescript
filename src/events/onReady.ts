@@ -1,7 +1,6 @@
 import { ActivityType, Client, Events } from "discord.js";
 
-// CommonJS export
-module.exports = {
+export default {
   name: Events.ClientReady,
   once: true,
   execute(client: Client) {

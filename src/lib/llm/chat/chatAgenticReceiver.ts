@@ -1,13 +1,13 @@
-import { getModelProps } from './modelsSelection';
-import type { ModelProps } from '../../../types/schemas';
+import { getModelProps } from "./modelsSelection.js";
+import type { ModelProps } from "../../../types/schemas.js";
 import type { Message, SendableChannels } from 'discord.js';
-import { JAKEY_SYSTEM_PROMPT } from '../../../data/sysprompts';
-import { text_chat_completion } from '../generateContent';
-import { loadPreferences, savePreferences } from '../../preferencesDBLoader';
+import { JAKEY_SYSTEM_PROMPT } from "../../../data/sysprompts.js";
+import { text_chat_completion } from "../generateContent.js";
+import { loadPreferences, savePreferences } from "../../preferencesDBLoader.js";
 import { fileTypeFromBuffer } from 'file-type';
 
 // Tool loader
-import { fetchToolPack } from '../../../tools/utils';
+import { fetchToolPack } from "../../../tools/utils.js";
 
 async function sendChunkedMessage(
   messageChannel: SendableChannels,

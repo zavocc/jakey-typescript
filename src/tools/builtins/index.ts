@@ -1,5 +1,6 @@
 import { readdir } from "node:fs/promises";
 import { Message } from "discord.js";
+import { fileURLToPath } from "node:url";
 
 type ToolHandler = (discord_interaction: Message, params: any) => Promise<string>;
 
@@ -27,7 +28,7 @@ function isFunctionToolSchema(value: unknown): value is FunctionToolSchema {
 }
 
 export async function fetchBuiltInToolPack(): Promise<ToolPack> {
-  const builtinsPath = __dirname; // current directory of builtins
+  const builtinsPath = fileURLToPath(new URL("./", import.meta.url));
   const entries = await readdir(builtinsPath, { withFileTypes: true });
   const toolDirectories = entries
     .filter((entry) => entry.isDirectory())

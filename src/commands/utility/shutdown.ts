@@ -1,5 +1,5 @@
 import { ChatInputCommandInteraction, SlashCommandBuilder } from "discord.js";
-import { stopServices } from "../../lib/services/services";
+import { stopServices } from "../../lib/services/services.js";
 
 export default {
   data: new SlashCommandBuilder()

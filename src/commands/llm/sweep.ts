@@ -1,7 +1,7 @@
 import { ChatInputCommandInteraction, MessageFlags, SlashCommandBuilder } from "discord.js";
 // for resetting preferences
-import { loadPreferences, savePreferences, clearUserPreferences } from "../../lib/preferencesDBLoader";
-import { DeleteGeminiInteractionID } from "../../lib/llm/geminiInteractionsMgmt";
+import { loadPreferences, savePreferences, clearUserPreferences } from "../../lib/preferencesDBLoader.js";
+import { DeleteGeminiInteractionID } from "../../lib/llm/geminiInteractionsMgmt.js";
 
 export default {
   data: new SlashCommandBuilder()

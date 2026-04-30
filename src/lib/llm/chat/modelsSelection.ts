@@ -1,5 +1,5 @@
-import { loadPreferences } from "../../preferencesDBLoader";
-import { ModelPropsSchema } from "../../../types/schemas";
+import { loadPreferences } from "../../preferencesDBLoader.js";
+import { ModelPropsSchema } from "../../../types/schemas.js";
 import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { z } from "zod";

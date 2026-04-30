@@ -1,10 +1,10 @@
-import { ConfigSchema, validateOrThrow } from "../types/schemas";
+import { ConfigSchema, validateOrThrow } from "../types/schemas.js";
 import { z } from "zod";
 import { readFile } from "node:fs/promises";
 import { readFileSync } from "node:fs";
-import path from "node:path";
+import { fileURLToPath } from "node:url";
 
-const CONFIG_JSON_PATH = path.join(__dirname, "../config.json");
+const CONFIG_JSON_PATH = fileURLToPath(new URL("../config.json", import.meta.url));
 
 type ConfigSchemaType = z.infer<typeof ConfigSchema>;
 let cachedConfig: ConfigSchemaType | undefined;
@@ -46,4 +46,3 @@ export async function getConfigJsonKey<K extends keyof ConfigSchemaType>(
   const config = await loadConfigJson();
   return config[key] ?? undefined;
 }
-

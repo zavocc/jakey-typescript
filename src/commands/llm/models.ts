@@ -1,4 +1,4 @@
-import { savePreferences } from "../../lib/preferencesDBLoader";
+import { savePreferences } from "../../lib/preferencesDBLoader.js";
 import {
   AutocompleteInteraction,
   ChatInputCommandInteraction,

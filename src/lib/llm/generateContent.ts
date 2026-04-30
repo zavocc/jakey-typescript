@@ -1,9 +1,10 @@
-import { GoogleClient } from './providerClients';
+import { GoogleClient } from "./providerClients.js";
 import type { Interactions } from '@google/genai';
 import { WaveFile } from 'wavefile';
 
 // DEBUG
-import { mkdir, writeFile } from 'fs/promises';
+import { mkdir, writeFile } from "node:fs/promises";
+import { fileURLToPath } from "node:url";
 
 type MediaType = 'image' | 'audio' | 'video' | 'document';
 
@@ -109,7 +110,7 @@ export async function text_chat_completion(
   }
 
   // Log possible outputs
-  const debugDir = `${__dirname}/../../../harbour/debug`;
+  const debugDir = fileURLToPath(new URL("../../../harbour/debug/", import.meta.url));
   await mkdir(debugDir, { recursive: true });
   await writeFile(`${debugDir}/debug.json`, JSON.stringify(interactionsResult.outputs, null, 2));
 

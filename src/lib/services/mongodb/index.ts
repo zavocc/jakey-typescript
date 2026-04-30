@@ -1,4 +1,4 @@
-import { getConfigJsonKeySync } from "../../configuratorJSON";
+import { getConfigJsonKeySync } from "../../configuratorJSON.js";
 import { MongoClient, type Db } from "mongodb";
 
 const client = new MongoClient(getConfigJsonKeySync("db")?.mongodb ?? "");

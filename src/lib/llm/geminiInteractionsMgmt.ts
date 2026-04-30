@@ -1,4 +1,4 @@
-import { GoogleClient } from "../../lib/llm/providerClients";
+import { GoogleClient } from "../../lib/llm/providerClients.js";
 
 export async function DeleteGeminiInteractionID(intID: string, userId: string) {
   // Delete the interaction from Google AI Studio

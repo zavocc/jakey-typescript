@@ -4,8 +4,8 @@ import {
   MessageContextMenuCommandInteraction,
   MessageFlags,
 } from "discord.js";
-import { tts_completion } from "../../../lib/llm/generateContent";
-import { GEMINI_TEXT_TO_SPEECH_SYSTEM_PROMPT } from "../../../data/sysprompts";
+import { tts_completion } from "../../../lib/llm/generateContent.js";
+import { GEMINI_TEXT_TO_SPEECH_SYSTEM_PROMPT } from "../../../data/sysprompts.js";
 
 export default {
   data: new ContextMenuCommandBuilder()

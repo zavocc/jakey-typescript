@@ -2,7 +2,8 @@
   "name": "jakey-js",
   "version": "2.0.0",
   "description": "",
-  "main": "index.js",
+  "type": "module",
+  "main": "dist/index.js",
   "scripts": {
     "preinstall": "node -e \"if (!/pnpm\\//.test(process.env.npm_config_user_agent || '')) { console.error('This project uses pnpm. Run: pnpm install'); process.exit(1); }\"",
     "dev": "tsx src/index.ts",

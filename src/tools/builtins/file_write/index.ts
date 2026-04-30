@@ -1,5 +1,5 @@
 import { Message, SendableChannels } from "discord.js";
-import { getSendableChannel } from "../../functions";
+import { getSendableChannel } from "../../functions.js";
 
 export const FILE_WRITE_TOOL_SCHEMA =
 {

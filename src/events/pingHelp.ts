@@ -1,8 +1,7 @@
 import { Events, Message } from "discord.js";
-import { HELP_MESSAGE } from "../data/constants";
+import { HELP_MESSAGE } from "../data/constants.js";
 
-// CommonJS export
-module.exports = {
+export default {
   name: Events.MessageCreate,
   async execute(message: Message) {
     if (message.author.bot) return;

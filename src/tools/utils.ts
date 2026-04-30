@@ -1,7 +1,7 @@
 import { readdir } from "node:fs/promises";
-import path from "node:path";
 import { Message } from "discord.js";
-import { fetchBuiltInToolPack } from "./builtins";
+import { fileURLToPath } from "node:url";
+import { fetchBuiltInToolPack } from "./builtins/index.js";
 
 type ToolHandler = (discord_interaction: Message, params: any) => Promise<string>;
 
@@ -81,7 +81,7 @@ export async function fetchListAvailableTool(): Promise<Array<{ name: string; hu
     human_name: "Disabled",
   };
 
-  const apisPath = path.join(__dirname, "apis");
+  const apisPath = fileURLToPath(new URL("./apis/", import.meta.url));
   const entries = await readdir(apisPath, { withFileTypes: true });
 
   const toolList = await Promise.all(

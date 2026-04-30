@@ -12,56 +12,61 @@
 */
 
 import { REST, Routes } from "discord.js";
-import { app_id, token } from "../config.json";
 import fs from "node:fs";
 import path from "node:path";
+import { fileURLToPath, pathToFileURL } from "node:url";
+import { getConfigJsonKeySync } from "../lib/configuratorJSON.js";
 
-const commands = [];
+const commands: unknown[] = [];
 const commandNames = new Set<string>();
-// Grab all the command folders from the commands directory you created earlier
-const foldersPath = path.join(__dirname, "../commands");
-const commandFilePaths: string[] = [foldersPath];
+const runtimeExtension = path.extname(fileURLToPath(import.meta.url));
 
-for (let i = 0; i < commandFilePaths.length; i++) {
-  const currentPath = commandFilePaths[i];
-  const pathStats = fs.statSync(currentPath);
+async function deployCommands(): Promise<void> {
+  const foldersPath = fileURLToPath(new URL("../commands/", import.meta.url));
+  const commandFilePaths: string[] = [foldersPath];
+  const appId = getConfigJsonKeySync("app_id");
+  const token = getConfigJsonKeySync("token");
 
-  if (pathStats.isDirectory()) {
-    const entries = fs.readdirSync(currentPath);
-    for (const entry of entries) {
-      commandFilePaths.push(path.join(currentPath, entry));
-    }
-    continue;
+  if (!appId || !token) {
+    throw new Error("Missing 'app_id' or 'token' in config.json.");
   }
 
-  if (pathStats.isFile() && currentPath.endsWith(".ts")) {
-    // Grab the SlashCommandBuilder#toJSON() output of each command's data for deployment
-    const loaded = require(currentPath);
-    const command = loaded.default ?? loaded;
-    if ("data" in command && "execute" in command) {
-      const commandJson = command.data.toJSON();
-      if (commandNames.has(commandJson.name)) {
-        console.log(
-          `[WARNING] Duplicate command name "${commandJson.name}" at ${currentPath}; skipping duplicate.`,
-        );
-        continue;
+  for (let i = 0; i < commandFilePaths.length; i++) {
+    const currentPath = commandFilePaths[i];
+    const pathStats = fs.statSync(currentPath);
+
+    if (pathStats.isDirectory()) {
+      const entries = fs.readdirSync(currentPath);
+      for (const entry of entries) {
+        commandFilePaths.push(path.join(currentPath, entry));
       }
+      continue;
+    }
 
-      commandNames.add(commandJson.name);
-      commands.push(commandJson);
-    } else {
-      console.log(
-        `[WARNING] The command at ${currentPath} is missing a required "data" or "execute" property.`,
-      );
+    if (pathStats.isFile() && currentPath.endsWith(runtimeExtension)) {
+      const loaded = await import(pathToFileURL(currentPath).href);
+      const command = loaded.default;
+      if ("data" in command && "execute" in command) {
+        const commandJson = command.data.toJSON();
+        if (commandNames.has(commandJson.name)) {
+          console.log(
+            `[WARNING] Duplicate command name "${commandJson.name}" at ${currentPath}; skipping duplicate.`,
+          );
+          continue;
+        }
+
+        commandNames.add(commandJson.name);
+        commands.push(commandJson);
+      } else {
+        console.log(
+          `[WARNING] The command at ${currentPath} is missing a required "data" or "execute" property.`,
+        );
+      }
     }
   }
-}
 
-// Construct and prepare an instance of the REST module
-const rest = new REST().setToken(token);
+  const rest = new REST().setToken(token);
 
-// and deploy your commands!
-(async () => {
   try {
     console.log(
       `Started refreshing ${commands.length} application (/) commands.`,
@@ -69,7 +74,7 @@ const rest = new REST().setToken(token);
 
     // The put method is used to fully refresh all global commands with the current set
     const data = (await rest.put(
-      Routes.applicationCommands(app_id),
+      Routes.applicationCommands(appId),
       { body: commands },
     )) as unknown[];
 
@@ -80,4 +85,6 @@ const rest = new REST().setToken(token);
     // And of course, make sure you catch and log any errors!
     console.error(error);
   }
-})();
+}
+
+void deployCommands();

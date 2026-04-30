@@ -1,4 +1,4 @@
-import { getSendableChannel } from "../../functions";
+import { getSendableChannel } from "../../functions.js";
 import { EmbedBuilder } from "discord.js";
 import { Message, SendableChannels } from "discord.js";
 
