@@ -1,8 +1,7 @@
-import { getConfigJsonKeySync } from "../../configuratorJSON.js";
 import { MongoClient, type Db } from "mongodb";
 
-const client = new MongoClient(getConfigJsonKeySync("db")?.mongodb ?? "");
-const db = getConfigJsonKeySync("db") ?? { mongodb_db_name: "" };
+const client = new MongoClient(process.env.MONGODB_URI ?? "");
+const dbName = process.env.MONGODB_DB_NAME ?? "";
 let isConnected = false;
 
 // connect to db
@@ -27,12 +26,12 @@ export async function getDB(): Promise<Db> {
     throw new Error("MongoDB client is not connected. Please call startDB() first.");
   }
 
-  // check if we have db.mongodb_db_name in config
-  if (!db.mongodb_db_name) {
-    throw new Error("Missing 'mongodb_db_name' in config.json.");
+  // check if we have MONGODB_DB_NAME in env
+  if (!dbName) {
+    throw new Error("Missing MONGODB_DB_NAME in environment variables.");
   }
 
-  const dataBased = client.db(db.mongodb_db_name);
+  const dataBased = client.db(dbName);
   return dataBased;
 }
 

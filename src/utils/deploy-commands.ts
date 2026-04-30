@@ -11,11 +11,12 @@
   [3] https://discordjs.guide/legacy/app-creation/deploying-commands#guild-commands
 */
 
+import "../lib/initEnv.js"
+
 import { REST, Routes } from "discord.js";
 import fg from "fast-glob";
 import path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
-import { getConfigJsonKeySync } from "../lib/configuratorJSON.js";
 
 const commands: unknown[] = [];
 const commandNames = new Set<string>();
@@ -28,11 +29,11 @@ async function deployCommands(): Promise<void> {
     absolute: true,
     onlyFiles: true,
   });
-  const appId = getConfigJsonKeySync("app_id");
-  const token = getConfigJsonKeySync("token");
+  const appId = process.env.DISCORD_APP_ID;
+  const token = process.env.DISCORD_TOKEN;
 
   if (!appId || !token) {
-    throw new Error("Missing 'app_id' or 'token' in config.json.");
+    throw new Error("Please set DISCORD_APP_ID and DISCORD_TOKEN in your environment variables.");
   }
 
   commandFilePaths.sort();

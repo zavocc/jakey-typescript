@@ -1,4 +1,4 @@
-import { getConfigJsonKey } from "./lib/configuratorJSON.js";
+import "./lib/initEnv.js"
 import {
   Client,
   Collection,
@@ -76,12 +76,11 @@ async function bootstrap() {
   await loadCommands();
   await loadEvents();
   await startServices();
-  const token = await getConfigJsonKey("token");
-  if (!token) {
+  if (!process.env.TOKEN) {
     console.error("Token not found in config.json");
     process.exit(1);
   }
-  await botClient.login(token);
+  await botClient.login(process.env.TOKEN);
 }
 
 bootstrap().catch((error) => {
