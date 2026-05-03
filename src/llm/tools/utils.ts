@@ -3,7 +3,7 @@ import { Message } from "discord.js";
 import { fileURLToPath } from "node:url";
 import { fetchBuiltInToolPack } from "./builtins/index.js";
 
-type ToolHandler = (discord_interaction: Message, params: any) => Promise<string>;
+type ToolHandler = (discord_interaction: Message, params: Record<string, unknown>) => Promise<string>;
 
 type ToolPack = {
   schemas: unknown[];
@@ -12,36 +12,39 @@ type ToolPack = {
 
 export async function fetchToolPack(selectedTool: string): Promise<ToolPack> {
   // if selectedTool name is "Disabled", we can only import built-in schemas from builtins/
-
   // Load built-in schemas by default and tool functions
   const builtInToolPack = await fetchBuiltInToolPack();
-  let allSchemas: Array<unknown> = [...builtInToolPack.schemas];
-  let allTools: Record<string, ToolHandler> = { ...builtInToolPack.functions };
+  const allSchemas: Array<unknown> = [];
+  const allTools: Record<string, ToolHandler> = {};
 
   if (selectedTool !== "Disabled") {
     const schemaS = await import(`./apis/${selectedTool}/schema.js`);
 
+    // If any schema entry is an MCP server, disable builtin tools and clear allSchemas and allTools
+    const hasMcpServer = Array.isArray(schemaS.TOOL_SCHEMAS) &&
+      schemaS.TOOL_SCHEMAS.some((chkschema: unknown) =>
+        typeof chkschema === "object" &&
+        chkschema !== null &&
+        "type" in chkschema &&
+        chkschema.type === "mcp_server");
+
+    if (hasMcpServer) {
+      allSchemas.push(...schemaS.TOOL_SCHEMAS);
+    } else {
+      allSchemas.push(...builtInToolPack.schemas, ...schemaS.TOOL_SCHEMAS);
+      // We use Object.assign to perform shallow merge, and functions assigned are kept, if spread operator and reassignment was used, it will cause linter errors
+      // For instance https://eslint.org/docs/latest/rules/no-useless-assignment
+      // This is used for 1. allTools is used so it doesn't see it as wasteful and 2. It safely merges functions with new ones
+      Object.assign(allTools, builtInToolPack.functions);
+    }
+
     // check if schemaS have TOOL_HUMAN_NAME otherwise we skip this tool
     if (!schemaS.TOOL_HUMAN_NAME) {
-      console.warn(`Tool ${selectedTool} does not have TOOL_HUMAN_NAME, skipping...`);
+      console.warn({ selected_tool: selectedTool }, "The selected tool does not have TOOL_HUMAN_NAME, skipping...");
       return {
         schemas: allSchemas,
         functions: allTools,
       };
-    }
-
-    // If any schema entry is an MCP server, disable builtin tools and clear allSchemas and allTools
-    const hasMcpServer = Array.isArray(schemaS.TOOL_SCHEMAS) &&
-      schemaS.TOOL_SCHEMAS.some((s: any) => s.type === "mcp_server");
-
-    if (hasMcpServer) {
-      allSchemas = [...schemaS.TOOL_SCHEMAS];
-      allTools = {};
-    } else {
-      allSchemas = [
-        ...allSchemas,
-        ...schemaS.TOOL_SCHEMAS
-      ];
     }
 
     // Try to import functions — if the tool is schema-only (no index.js), skip
@@ -58,14 +61,14 @@ export async function fetchToolPack(selectedTool: string): Promise<ToolPack> {
             .filter(([, valueFunction]) => typeof valueFunction === "function")
         ) as Record<string, ToolHandler>;
 
-        allTools = {
-          ...allTools,
-          ...functions,
-        };
+        Object.assign(allTools, functions);
       } catch {
         // Schema-only tool (e.g. GoogleSearch) — no functions to import
       }
     }
+  } else {
+    allSchemas.push(...builtInToolPack.schemas);
+    Object.assign(allTools, builtInToolPack.functions);
   }
 
   return {

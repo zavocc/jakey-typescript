@@ -13,12 +13,14 @@ export const HAVE_A_BANANA_TOOL_SCHEMA =
   }
 }
 
-export async function have_a_banana(discord_interaction: Message, params: {}): Promise<string> {
+export async function have_a_banana(discord_interaction: Message, params: unknown): Promise<string> {
   // We just send image of banana
   const messageChannel: SendableChannels = getSendableChannel(discord_interaction);
 
   // Ignore params
-  params;
+  if (params) {
+    //ignored
+  }
 
   const bananaEmbed = new EmbedBuilder()
     .setTitle("Have a banana 🍌")

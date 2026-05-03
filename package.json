@@ -5,6 +5,7 @@
   "type": "module",
   "main": "dist/index.js",
   "scripts": {
+    "test": "eslint src/",
     "dev": "tsx src/index.ts",
     "build": "tsc",
     "start": "node dist/index.js",
