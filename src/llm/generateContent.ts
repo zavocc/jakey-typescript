@@ -1,4 +1,4 @@
-import { GoogleClient } from '../lib/services/index.js';
+import { GoogleClient } from '../lib/genAIClients.js';
 import { uploadToGoogleFilesAPI } from './fileUpload.js';
 import type { Interactions } from '@google/genai';
 import WaveFile from 'wavefile';

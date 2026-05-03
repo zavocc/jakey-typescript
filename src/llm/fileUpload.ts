@@ -1,5 +1,5 @@
 import logger from "../lib/pinoLogger.js";
-import { GoogleClient } from "../lib/services/index.js";
+import { GoogleClient } from "../lib/genAIClients.js";
 import { tmpdir } from "node:os";
 import { mkdtemp, rm } from "node:fs/promises";
 import { createWriteStream } from "node:fs";
