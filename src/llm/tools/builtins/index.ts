@@ -2,7 +2,7 @@ import { readdir } from "node:fs/promises";
 import { Message } from "discord.js";
 import { fileURLToPath } from "node:url";
 
-type ToolHandler = (discord_interaction: Message, params: any) => Promise<string>;
+type ToolHandler = (discord_interaction: Message, params: Record<string, unknown>) => Promise<string>;
 
 type FunctionToolSchema = {
   type: "function";
@@ -41,7 +41,7 @@ export async function fetchBuiltInToolPack(): Promise<ToolPack> {
   await Promise.all(
     toolDirectories.map(async (entry) => {
       const toolModule = await import(`./${entry.name}/index.js`);
-      
+
       // Filter tool schemas that end with "_TOOL_SCHEMA" and add to schemas array
       // We convert toolModule (which is an object) into entries to iterate and filter
       // from {key: value} to [[key, value], ...]
