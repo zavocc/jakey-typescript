@@ -1,5 +1,5 @@
 import { GoogleClient } from '../lib/services/services.js';
-import { getMediaType } from './utils.js';
+import { uploadToGoogleFilesAPI } from './fileUpload.js';
 import type { Interactions } from '@google/genai';
 import WaveFile from 'wavefile';
 
@@ -9,7 +9,11 @@ export async function text_chat_completion(
   optional_params?: {
     interactions_context_id?: string,
     system_prompt?: string,
-    attachment_urls?: string[],
+    attachment_urls?: Array<{
+      fileName: string;
+      mimeType: string;
+      fileURI: string;
+    }>,
     additional_properties?: Record<string, unknown>,
   },
 ): Promise<{
@@ -30,13 +34,35 @@ export async function text_chat_completion(
     // So we can push it as part of the prompt content pieces with the correct type
     if (attachment_urls && attachment_urls.length > 0) {
       const attachmentMessages = await Promise.all(
-        attachment_urls.map(async (url) => {
-          const mediaType = await getMediaType(url);
-          return {
-            type: mediaType,
-            uri: url,
-            mime_type: undefined
-          };
+        attachment_urls.map(async (attachment) => {
+          const curURI = await uploadToGoogleFilesAPI(attachment.fileName, attachment.mimeType, attachment.fileURI);
+
+          // Detect filetype based on mimeType
+          if (attachment.mimeType.startsWith("image")) {
+            return {
+              type: 'image' as const,
+              uri: curURI,
+              mime_type: attachment.mimeType as Interactions.ImageContent['mime_type']
+            };
+          } else if (attachment.mimeType.startsWith("video")) {
+            return {
+              type: 'video' as const,
+              uri: curURI,
+              mime_type: attachment.mimeType as Interactions.VideoContent['mime_type']
+            };
+          } else if (attachment.mimeType.startsWith("audio")) {
+            return {
+              type: 'audio' as const,
+              uri: curURI,
+              mime_type: attachment.mimeType as Interactions.AudioContent['mime_type']
+            };
+          } else {
+            return {
+              type: 'document' as const,
+              uri: curURI,
+              mime_type: attachment.mimeType as Interactions.DocumentContent['mime_type']
+            };
+          }
         })
       );
       constructedContent.push(...attachmentMessages);

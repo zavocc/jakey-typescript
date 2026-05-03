@@ -18,8 +18,8 @@ import fg from "fast-glob";
 import path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 
-const commands: unknown[] = [];
-const commandNames = new Set<string>();
+const commands: unknown[] = []; // commands json, using builder .ToJSON()
+const commandNames = new Set<string>(); // for duplicate checks, we put list of command names here
 const runtimeExtension = path.extname(fileURLToPath(import.meta.url)); // determine the runtime extension (e.g. .ts or .js) by basing off the current file's extension
 
 async function deployCommands(): Promise<void> {
@@ -66,7 +66,7 @@ async function deployCommands(): Promise<void> {
       `Started refreshing ${commands.length} application (/) commands.`,
     );
 
-    // The put method is used to fully refresh all global commands with the current set
+    // Publish array of commands in json globally to Discord application/bot
     const data = (await rest.put(
       Routes.applicationCommands(appId),
       { body: commands },

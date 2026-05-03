@@ -30,7 +30,11 @@ export default {
       }, 8000);
 
       // Check if the message has attachments and get their URLs
-      const attachmentUrls = message.attachments.map(attachment => attachment.url);
+      const attachmentUrls = message.attachments.map(attachment => ({
+        fileName: attachment.name,
+        mimeType: attachment.contentType ?? "application/octet-stream",
+        fileURI: attachment.url
+      }));
 
       try {
         await chatToLLM(strippedContent, userId, message, attachmentUrls);

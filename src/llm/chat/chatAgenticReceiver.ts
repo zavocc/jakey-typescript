@@ -25,7 +25,11 @@ export async function chatToLLM(
   prompt: string,
   discord_user_id: string,
   discord_interaction: Message,
-  attachment_urls?: string[],
+  attachment_urls?: Array<{
+    fileName: string;
+    mimeType: string;
+    fileURI: string;
+  }>,
 ): Promise<void> {
   // Narrow to a channel type that is allowed to send messages
   const messageChannel: SendableChannels | null = discord_interaction.channel?.isSendable() ? discord_interaction.channel : null;
