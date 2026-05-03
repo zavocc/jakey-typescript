@@ -1,24 +1,5 @@
 import { z } from "zod";
 
-export function validateOrThrow<T>(label: string, schema: z.ZodType<T>, data: unknown): T {
-  const result = schema.safeParse(data);
-
-  if (!result.success) {
-    const details = result.error.issues
-      .map((issue) => {
-        const fieldPath = issue.path.length > 0 ? issue.path.join(".") : "(root)";
-        return `- ${fieldPath}: ${issue.message}`;
-      })
-      .join("\n");
-
-    throw new Error(
-      `Invalid ${label}. Please fix ${label} and try again.\n${details}`
-    );
-  }
-
-  return result.data;
-}
-
 // for preferences
 export const PreferencesSchema = z.object({
   user_choice_model_alias: z.string(),
