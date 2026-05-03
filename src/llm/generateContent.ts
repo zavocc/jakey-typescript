@@ -1,47 +1,7 @@
 import { GoogleClient } from '../lib/services/services.js';
+import { getMediaType } from './utils.js';
 import type { Interactions } from '@google/genai';
 import WaveFile from 'wavefile';
-
-type MediaType = 'image' | 'audio' | 'video' | 'document';
-
-/**
- * Determines media type from a URL using an HTTP HEAD request (no download).
- * Falls back to URL extension parsing if HEAD fails.
- */
-async function getMediaType(url: string): Promise<MediaType> {
-  // Try HEAD request first to get Content-Type without downloading
-  try {
-    const res = await fetch(url, { method: 'HEAD' });
-    const contentType = res.headers.get('content-type') ?? '';
-
-    if (contentType.startsWith('image/')) return 'image';
-    if (contentType.startsWith('video/')) return 'video';
-    if (contentType.startsWith('audio/')) return 'audio';
-    if (contentType.startsWith('application/pdf')) return 'document';
-  } catch {
-    // HEAD request failed, fall through to extension-based detection
-  }
-
-  // Fallback: guess from URL file extension
-  try {
-    const ext = new URL(url).pathname.split('.').pop()?.toLowerCase();
-    if (['png', 'jpg', 'jpeg', 'gif', 'webp', 'bmp', 'tiff', 'heic', 'heif', 'svg'].includes(ext ?? '')) return 'image';
-    if (['mp4', 'webm', 'mov', 'avi', 'wmv', 'flv', 'mpg', 'mpeg', '3gpp'].includes(ext ?? '')) return 'video';
-    if (['mp3', 'wav', 'ogg', 'flac', 'aac', 'aiff', 'm4a', 'opus'].includes(ext ?? '')) return 'audio';
-    if (['pdf'].includes(ext ?? '')) return 'document';
-  } catch {
-    // URL parsing failed
-  }
-
-  // Default to image if we can't determine the type
-  return 'image';
-}
-
-export type OutputShape = {
-  modelOutputs: Interactions.Content[],
-  model_used: string,
-  interactionID: string
-}
 
 export async function text_chat_completion(
   model: string,
@@ -52,7 +12,11 @@ export async function text_chat_completion(
     attachment_urls?: string[],
     additional_properties?: Record<string, unknown>,
   },
-): Promise<OutputShape> {
+): Promise<{
+  modelOutputs: Interactions.Content[],
+  model_used: string,
+  interactionID: string
+}> {
   // Parse optional params
   const { interactions_context_id, system_prompt, attachment_urls, additional_properties } = optional_params ?? {};
 
