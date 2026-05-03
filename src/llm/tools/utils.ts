@@ -33,9 +33,6 @@ export async function fetchToolPack(selectedTool: string): Promise<ToolPack> {
       allTools = {};
     } else {
       allSchemas = [...builtInToolPack.schemas, ...schemaS.TOOL_SCHEMAS];
-      // We use Object.assign to perform shallow merge, and functions assigned are kept, if spread operator and reassignment was used, it will cause linter errors
-      // For instance https://eslint.org/docs/latest/rules/no-useless-assignment
-      // This is used for 1. allTools is used so it doesn't see it as wasteful and 2. It safely merges functions with new ones
       allTools = { ...builtInToolPack.functions };
     }
 
