@@ -14,8 +14,8 @@ export async function fetchToolPack(selectedTool: string): Promise<ToolPack> {
   // if selectedTool name is "Disabled", we can only import built-in schemas from builtins/
   // Load built-in schemas by default and tool functions
   const builtInToolPack = await fetchBuiltInToolPack();
-  const allSchemas: Array<unknown> = [];
-  const allTools: Record<string, ToolHandler> = {};
+  let allSchemas: Array<unknown>;
+  let allTools: Record<string, ToolHandler>;
 
   if (selectedTool !== "Disabled") {
     const schemaS = await import(`./apis/${selectedTool}/schema.js`);
@@ -29,13 +29,14 @@ export async function fetchToolPack(selectedTool: string): Promise<ToolPack> {
         chkschema.type === "mcp_server");
 
     if (hasMcpServer) {
-      allSchemas.push(...schemaS.TOOL_SCHEMAS);
+      allSchemas = [...schemaS.TOOL_SCHEMAS];
+      allTools = {};
     } else {
-      allSchemas.push(...builtInToolPack.schemas, ...schemaS.TOOL_SCHEMAS);
+      allSchemas = [...builtInToolPack.schemas, ...schemaS.TOOL_SCHEMAS];
       // We use Object.assign to perform shallow merge, and functions assigned are kept, if spread operator and reassignment was used, it will cause linter errors
       // For instance https://eslint.org/docs/latest/rules/no-useless-assignment
       // This is used for 1. allTools is used so it doesn't see it as wasteful and 2. It safely merges functions with new ones
-      Object.assign(allTools, builtInToolPack.functions);
+      allTools = { ...builtInToolPack.functions };
     }
 
     // check if schemaS have TOOL_HUMAN_NAME otherwise we skip this tool
@@ -67,8 +68,8 @@ export async function fetchToolPack(selectedTool: string): Promise<ToolPack> {
       }
     }
   } else {
-    allSchemas.push(...builtInToolPack.schemas);
-    Object.assign(allTools, builtInToolPack.functions);
+    allSchemas = [...builtInToolPack.schemas];
+    allTools = { ...builtInToolPack.functions };
   }
 
   return {
