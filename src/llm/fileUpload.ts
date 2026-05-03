@@ -1,10 +1,13 @@
-import { GoogleClient } from "../lib/services/services.js";
+import logger from "../lib/pinoLogger.js";
+import { GoogleClient } from "../lib/services/index.js";
 import { tmpdir } from "node:os";
 import { mkdtemp, rm } from "node:fs/promises";
 import { createWriteStream } from "node:fs";
 import { join } from "node:path";
 import { pipeline } from "node:stream/promises";
 import { Readable } from "node:stream";
+
+const childLogger = logger.child({ module: "llm.fileUpload" });
 
 export async function uploadToGoogleFilesAPI(fileName: string, mimeType: string, fileURL: string): Promise<string> {
   // Create a temporary directory for the download
@@ -54,7 +57,7 @@ export async function uploadToGoogleFilesAPI(fileName: string, mimeType: string,
   } finally {
     await rm(tempDir, { recursive: true, force: true });
   }
-  console.log(`[INFO] Uploaded file to Google service: ${fileName}`)
+  childLogger.info({ file_uploaded: fileName }, "Uploaded file to Google service")
 
   if (!uploadedFile || !uploadedFile.uri) {
     throw new Error("Failed to get uploaded file URI");

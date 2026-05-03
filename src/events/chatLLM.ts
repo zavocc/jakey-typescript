@@ -1,5 +1,8 @@
+import logger from "../lib/pinoLogger.js";
 import { Events, Message } from "discord.js";
 import { chatToLLM } from "../llm/chat/chatAgenticReceiver.js";
+
+const childLogger = logger.child({ module: "events.chatLLM" });
 
 export default {
   name: Events.MessageCreate,
@@ -25,7 +28,7 @@ export default {
       await textChannel.sendTyping();
       const typingInterval = setInterval(() => {
         void textChannel.sendTyping().catch((typingError) => {
-          console.error("Failed to refresh typing indicator:", typingError);
+          childLogger.error({ err: typingError }, "Failed to refresh typing indicator:");
         });
       }, 8000);
 
@@ -45,7 +48,7 @@ export default {
         } else if (error instanceof Error && error.message.includes("Model unavailable")) {
           await textChannel.send("The model you have selected is currently unavailable, please select a different model");
         } else {
-          console.error("Error generating response:", error);
+          childLogger.error({ err: error }, "Error generating response:");
           await textChannel.send("Sorry, I couldn't generate a response at the moment.");
         }
       } finally {

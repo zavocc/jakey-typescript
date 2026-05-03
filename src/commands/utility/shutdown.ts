@@ -1,5 +1,5 @@
 import { ChatInputCommandInteraction, SlashCommandBuilder } from "discord.js";
-import { stopServices } from "../../lib/services/services.js";
+import { stopServices } from "../../lib/services/index.js";
 
 export default {
   data: new SlashCommandBuilder()
@@ -9,7 +9,7 @@ export default {
     await interaction.reply("Shutting down...");
     // Use close method to shut down the bot
     await interaction.client.destroy();
-    
+
     // Stop all services before exiting
     await stopServices();
 

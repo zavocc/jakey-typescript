@@ -1,3 +1,4 @@
+import logger from "../../lib/pinoLogger.js";
 import { getModelProps } from "./modelsSelection.js";
 import type { ModelProps } from "../../types/schemas.js";
 import type { Message, SendableChannels } from 'discord.js';
@@ -8,6 +9,8 @@ import { fileTypeFromBuffer } from 'file-type';
 
 // Tool loader
 import { fetchToolPack } from "../tools/utils.js";
+
+const childLogger = logger.child({ module: "llm.chat.chatAgenticReceiver" });
 
 async function sendChunkedMessage(
   messageChannel: SendableChannels,
@@ -148,7 +151,12 @@ export async function chatToLLM(
         try {
           toolResult = await toolFunctions(discord_interaction, output.arguments ?? {});
         } catch (error) {
-          console.error(`Error calling tool ${toolName}:`, error);
+          childLogger.error({
+            tool_name: toolName,
+            tool_error: error,
+            user_snowflake: discord_interaction.author.id,
+            interaction_id: discord_interaction.id
+          }, "Error calling tool");
           toolResult = `{"error": "Failed to execute tool ${toolName}, reason: ${error instanceof Error ? error.message : String(error)}"}`;
         }
 

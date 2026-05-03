@@ -1,4 +1,7 @@
+import logger from "../lib/pinoLogger.js";
 import { ActivityType, Client, Events } from "discord.js";
+
+const childLogger = logger.child({ module: "events.onReady" });
 
 export default {
   name: Events.ClientReady,
@@ -9,7 +12,7 @@ export default {
       throw new Error("Client user is not available.");
     }
 
-    console.log(`Ready! Logged in as ${client.user.tag}`);
+    childLogger.info({ client_user_tag: client.user.tag }, "Ready! Logged in");
 
     // Set status
     client.user.setActivity("sex", {

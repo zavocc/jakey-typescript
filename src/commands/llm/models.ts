@@ -1,3 +1,4 @@
+import logger from "../../lib/pinoLogger.js";
 import { savePreferences } from "../../lib/preferencesDBLoader.js";
 import {
   AutocompleteInteraction,
@@ -8,6 +9,8 @@ import {
 } from "discord.js";
 import { readFile } from "node:fs/promises";
 import path from "node:path";
+
+const childLogger = logger.child({ module: "commands.llm.models" });
 
 type ModelsFile = {
   models: Array<{
@@ -64,7 +67,7 @@ export default {
     if (subcmd == "set") {
       const selectedModelAlias = interaction.options.getString("model_name", true);
 
-      console.log(`Selected model alias: ${selectedModelAlias}`);
+      childLogger.info({ model_set: selectedModelAlias, user_snowflake: interaction.user.id }, "Selected model alias");
 
       // Defer
       await interaction.deferReply({ flags: MessageFlags.Ephemeral });

@@ -1,3 +1,4 @@
+import logger from "../../lib/pinoLogger.js";
 import {
   AutocompleteInteraction,
   ChatInputCommandInteraction,
@@ -7,6 +8,8 @@ import {
 } from "discord.js";
 import { fetchListAvailableTool } from "../../llm/tools/utils.js";
 import { savePreferences } from "../../lib/preferencesDBLoader.js";
+
+const childLogger = logger.child({ module: "commands.llm.tools" });
 
 export default {
   data: new SlashCommandBuilder()
@@ -65,7 +68,7 @@ export default {
       await savePreferences(interaction.user.id, "user_choice_tool", selectedTool);
 
       // Done
-      console.log(`Selected tool: ${selectedTool}`);
+      childLogger.info({ model_set: selectedTool, user_snowflake: interaction.user.id }, "Selected tool for the user");
       await interaction.editReply({ content: `Tools are loaded from **${selectedToolHumanName}** and chat is reset.` });
     }
   }

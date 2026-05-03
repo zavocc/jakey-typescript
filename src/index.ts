@@ -1,4 +1,5 @@
 import "./lib/initEnv.js";
+import logger from "./lib/pinoLogger.js";
 import {
   Client,
   Collection,
@@ -10,8 +11,15 @@ import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 
+// child logger for main
+const childLogger = logger.child(
+  {
+    module: "main_index"
+  }
+)
+
 // TODO: to polish
-import { startServices } from "./lib/services/services.js";
+import { startServices } from "./lib/services/index.js";
 
 // Create a new client instance
 const botClient: Client = new Client({
@@ -45,11 +53,9 @@ async function loadCommands(): Promise<void> {
     const command = loaded.default;
     if ("data" in command && "execute" in command) {
       botClient.commands.set(command.data.name, command);
-      console.log(`[INFO] Loaded command: ${command.data.name} from ${currentPath}`);
+      childLogger.info({ command_name: command.data.name, command_path: currentPath }, "Loaded command successfully...");
     } else {
-      console.log(
-        `[WARNING] The command at ${currentPath} is missing a required "data" or "execute" property.`,
-      );
+      childLogger.warn({ command_path: currentPath }, "This command is missing a required \"data\" or \"execute\" property.");
     }
   }
 }
@@ -67,7 +73,7 @@ async function loadEvents(): Promise<void> {
     } else {
       botClient.on(event.name, (...args) => event.execute(...args));
     }
-    console.log(`[INFO] Loaded event: ${event.name} from ${filePath}`);
+    childLogger.info({ event_name: event.name, event_path: filePath }, "Loaded event");
   }
 }
 
@@ -77,13 +83,13 @@ async function bootstrap() {
   await loadEvents();
   await startServices();
   if (!process.env.DISCORD_TOKEN) {
-    console.error("DISCORD_TOKEN not found in environment variables.");
+    childLogger.error("DISCORD_TOKEN not found in environment variables.");
     process.exit(1);
   }
   await botClient.login(process.env.DISCORD_TOKEN);
 }
 
 bootstrap().catch((error) => {
-  console.error("Startup failed:", error);
+  childLogger.error({ err: error }, "Startup failed:");
   process.exit(1);
 });

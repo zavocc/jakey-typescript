@@ -1,4 +1,7 @@
+import logger from "../lib/pinoLogger.js";
 import { Events, Interaction, MessageFlags } from "discord.js";
+
+const childLogger = logger.child({ module: "events.InteractionCreate" });
 
 export default {
   name: Events.InteractionCreate,
@@ -6,27 +9,28 @@ export default {
     if (interaction.isAutocomplete()) {
       const command = interaction.client.commands.get(interaction.commandName);
       if (!command?.autocomplete) {
-        console.error(`No autocomplete handler for ${interaction.commandName} was found.`);
+        childLogger.warn({ commandName: interaction.commandName }, "No autocomplete handler found for command");
         return;
       }
 
       try {
         await command.autocomplete(interaction);
       } catch (error) {
-        console.error(error);
+        childLogger.error({ err: error, commandName: interaction.commandName, userID: interaction.user.id }, "Error executing autocomplete command");
       }
 
       return;
     }
 
-    if (
-      !interaction.isChatInputCommand() &&
-      !interaction.isMessageContextMenuCommand()
-    ) return;
+    // Ignore interactions that's not either chat input (e.g. slash commands, events) or message context menu commands
+    if (!interaction.isChatInputCommand() && !interaction.isMessageContextMenuCommand()) {
+      childLogger.debug({ interactionType: interaction.type }, "Ignoring unsupported interaction type");
+      return;
+    }
 
     const command = interaction.client.commands.get(interaction.commandName);
     if (!command) {
-      console.error(`No command matching ${interaction.commandName} was found.`);
+      childLogger.warn({ commandName: interaction.commandName }, "No matching command found.");
       return;
     }
 
@@ -34,7 +38,7 @@ export default {
     try {
       await command.execute(interaction);
     } catch (error) {
-      console.error(error);
+      childLogger.error({ err: error, commandName: interaction.commandName, userID: interaction.user.id }, "Error executing command");
       try {
         if (interaction.replied || interaction.deferred) {
           await interaction.followUp({
@@ -48,7 +52,7 @@ export default {
           });
         }
       } catch (replyError) {
-        console.error("Failed to send interaction error response:", replyError);
+        childLogger.error({ err: replyError, commandName: interaction.commandName, userID: interaction.user.id }, "Failed to send interaction error response");
       }
     }
   },
