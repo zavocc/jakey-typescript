@@ -81,6 +81,7 @@ export async function chatToLLM(
 
   while (!toolHasDone) {
     let hasToolCalls = false;
+    const toolResults = [];
 
     // Process ALL outputs from the response first
     for (const output of response.modelOutputs) {
@@ -144,27 +145,33 @@ export async function chatToLLM(
           toolResult = `{"error": "Failed to execute tool ${toolName}, reason: ${error instanceof Error ? error.message : String(error)}"}`;
         }
 
-        // Rerun with tool result — use the interaction ID from the function call response
-        // so the API sees the function result as a continuation of the correct turn
-        response = await text_chat_completion(
-          modelProps.model_id,
-          [
-            {
-              type: 'function_result',
-              name: output.name,
-              call_id: output.id,
-              result: toolResult
-            }
-          ],
-          interactionIDStored,
-          JAKEY_SYSTEM_PROMPT,
-          undefined,
-          additionalParams
-        );
-
-        // Update stored ID to the latest interaction in the chain
-        interactionIDStored = response.interactionID;
+        toolResults.push({
+          type: 'function_result' as const,
+          name: output.name,
+          call_id: output.id,
+          result: toolResult
+        });
       }
+    }
+
+    // Check if it executed any tool calls
+    // This will continue to next loop but will check again if another tool call is requested or not
+    if (hasToolCalls) {
+      // Send all tool results for this interaction together. Each call_id belongs
+      // to the interaction that produced the current response.modelOutputs.
+      response = await text_chat_completion(
+        modelProps.model_id,
+        toolResults,
+        interactionIDStored,
+        JAKEY_SYSTEM_PROMPT,
+        undefined,
+        additionalParams
+      );
+
+      // Update stored ID only after all tool results from the previous
+      // interaction have been submitted.
+      interactionIDStored = response.interactionID;
+      continue;
     }
 
     // After processing all outputs, check if the (potentially new) response has more tool calls
