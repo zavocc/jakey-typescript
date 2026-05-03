@@ -28,6 +28,7 @@ export async function uploadToGoogleFilesAPI(fileName: string, mimeType: string,
 
   // Then we upload the file to Google service
   let uploadedFile;
+  let uploadDone = false;
   try {
     uploadedFile = await GoogleClient.files.upload({
       file: outputFile,
@@ -35,12 +36,25 @@ export async function uploadToGoogleFilesAPI(fileName: string, mimeType: string,
         mimeType: mimeType
       }
     });
+
+    // Check status and wait for processing
+    while (!uploadDone) {
+      const status = await GoogleClient.files.get({ name: uploadedFile.name ?? "" });
+      if (status.state === "ACTIVE") {
+        uploadDone = true;
+      } else if (status.state === "FAILED") {
+        throw new Error(`File upload failed`);
+      } else if (status.state === "PROCESSING") {
+        // set timeout for 2 seconds, then execute Promise's resolve function to proceed with next loop
+        await new Promise<void>(resolve => setTimeout(() => { resolve(); }, 2000));
+      }
+    }
   } catch (error) {
-    throw new Error(`Failed to upload file: ${error}`, { cause: error });
+    throw new Error(`Failed to upload file ${fileName} with cause: ${error}`, { cause: error });
   } finally {
     await rm(tempDir, { recursive: true, force: true });
   }
-  console.log(`[INFO] Uploaded file to Google Service: ${fileName}`)
+  console.log(`[INFO] Uploaded file to Google service: ${fileName}`)
 
   if (!uploadedFile || !uploadedFile.uri) {
     throw new Error("Failed to get uploaded file URI");
