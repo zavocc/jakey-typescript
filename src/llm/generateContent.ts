@@ -46,11 +46,16 @@ export type OutputShape = {
 export async function text_chat_completion(
   model: string,
   prompt: string | Interactions.Content[],
-  interactions_context_id?: string,
-  system_prompt?: string,
-  attachment_urls?: string[],
-  additional_properties?: Record<string, unknown>,
+  optional_params?: {
+    interactions_context_id?: string,
+    system_prompt?: string,
+    attachment_urls?: string[],
+    additional_properties?: Record<string, unknown>,
+  },
 ): Promise<OutputShape> {
+  // Parse optional params
+  const { interactions_context_id, system_prompt, attachment_urls, additional_properties } = optional_params ?? {};
+
   let constructedContent: Interactions.Content[];
 
   // Construct a prompt

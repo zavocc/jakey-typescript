@@ -70,15 +70,18 @@ export async function chatToLLM(
   let response = await text_chat_completion(
     modelProps.model_id,
     prompt,
-    context ?? undefined,
-    JAKEY_SYSTEM_PROMPT,
-    attachment_urls,
-    additionalParams
+    {
+      interactions_context_id: context ?? undefined,
+      system_prompt: JAKEY_SYSTEM_PROMPT,
+      attachment_urls,
+      additional_properties: additionalParams,
+    }
   );
 
   // Save interaction ID throughout the loop
   interactionIDStored = response.interactionID;
 
+  // Agentic loop and response handler, we display each response modalities one by one
   while (!toolHasDone) {
     let hasToolCalls = false;
     const toolResults = [];
@@ -162,10 +165,12 @@ export async function chatToLLM(
       response = await text_chat_completion(
         modelProps.model_id,
         toolResults,
-        interactionIDStored,
-        JAKEY_SYSTEM_PROMPT,
-        undefined,
-        additionalParams
+        {
+          interactions_context_id: interactionIDStored,
+          system_prompt: JAKEY_SYSTEM_PROMPT,
+          attachment_urls: undefined,
+          additional_properties: additionalParams,
+        }
       );
 
       // Update stored ID only after all tool results from the previous
