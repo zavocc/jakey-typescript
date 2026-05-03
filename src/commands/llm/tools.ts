@@ -68,7 +68,7 @@ export default {
       await savePreferences(interaction.user.id, "user_choice_tool", selectedTool);
 
       // Done
-      childLogger.info({ model_set: selectedTool, user_snowflake: interaction.user.id }, "Selected tool for the user");
+      childLogger.info({ tool_set: selectedTool, user_snowflake: interaction.user.id }, "Selected tool for the user");
       await interaction.editReply({ content: `Tools are loaded from **${selectedToolHumanName}** and chat is reset.` });
     }
   }
