@@ -48,7 +48,7 @@ export default {
           await textChannel.send(error.message);
         } else if (error instanceof Error && error.message.includes("Model unavailable")) {
           const modelUsed = await loadPreferences(userId, "user_choice_model_alias")
-          childLogger.warn({ user_snowflake: userId, model_used: modelUsed }, "The user selected a model that is unavailable from models.json");
+          childLogger.warn({ model_used: modelUsed, user_snowflake: userId }, "The user selected a model that is unavailable from models.json");
           await textChannel.send("The model you have selected is currently unavailable, please select a different model");
         } else {
           childLogger.error({ err: error, user_snowflake: userId }, "Error generating response");
