@@ -20,53 +20,56 @@ export async function fetchToolPack(selectedTool: string): Promise<ToolPack> {
   let allSchemas: Array<unknown>;
   let allTools: Record<string, ToolHandler>;
 
+  // Load tools if selected tool is disabled, otherwise we only load builtin tools
   if (selectedTool !== "Disabled") {
     const schemaS = await import(`./apis/${selectedTool}/schema.js`);
-
-    // If any schema entry is an MCP server, disable builtin tools and clear allSchemas and allTools
-    const hasMcpServer = Array.isArray(schemaS.TOOL_SCHEMAS) &&
-      schemaS.TOOL_SCHEMAS.some((chkschema: unknown) =>
-        typeof chkschema === "object" &&
-        chkschema !== null &&
-        "type" in chkschema &&
-        chkschema.type === "mcp_server");
-
-    // Do not import built-in tools if MCP is used
-    if (hasMcpServer) {
-      allSchemas = [...schemaS.TOOL_SCHEMAS];
-      allTools = {};
-    } else {
-      allSchemas = [...builtInToolPack.schemas, ...schemaS.TOOL_SCHEMAS];
-      allTools = { ...builtInToolPack.functions };
-    }
 
     // check if schemaS have TOOL_HUMAN_NAME otherwise we skip this tool
     if (!schemaS.TOOL_HUMAN_NAME) {
       childLogger.warn({ selected_tool: selectedTool }, "The selected tool does not have TOOL_HUMAN_NAME, skipping...");
       return {
-        schemas: allSchemas,
-        functions: allTools,
+        schemas: [...builtInToolPack.schemas],
+        functions: { ...builtInToolPack.functions },
       };
     }
 
+    // If any schema entry is an MCP server, we return early only with the MCP server schema with no built-in tools
+    const hasMcpServer = Array.isArray(schemaS.TOOL_SCHEMAS) &&
+    schemaS.TOOL_SCHEMAS.some((chkschema: unknown) =>
+      typeof chkschema === "object" &&
+      chkschema !== null &&
+      "type" in chkschema &&
+      chkschema.type === "mcp_server");
+
+    if (hasMcpServer) {
+      return {
+        schemas: [...schemaS.TOOL_SCHEMAS],
+        functions: {},
+      };
+    }
+
+    // Load the built-in tools and schema first
+    allSchemas = [...builtInToolPack.schemas, ...schemaS.TOOL_SCHEMAS];
+    allTools = { ...builtInToolPack.functions };
+
     // Try to import functions — if the tool is schema-only (no index.js), skip
-    // This will only load functions if there is no MCP Servers (remote), otherwise schema-only
-    if (!hasMcpServer) {
-      try {
-        const functionS = await import(`./apis/${selectedTool}/index.js`);
+    try {
+      const functionS = await import(`./apis/${selectedTool}/index.js`);
 
-        // Look-up all exported functions only
-        const functions = Object.fromEntries(
-          Object.entries(functionS)
-            // Ignore the key as we can only check if the value is function
-            // Returns after running Object.entries: [["web_search", async () => {}]]
-            .filter(([, valueFunction]) => typeof valueFunction === "function")
-        ) as Record<string, ToolHandler>;
+      // Look-up all exported functions only
+      const toolapi_functions = Object.fromEntries(
+        Object.entries(functionS)
+          // Ignore the key as we can only check if the value is function
+          // Returns after running Object.entries: [["web_search", async () => {}]]
+          .filter(([, valueFunction]) => typeof valueFunction === "function")
+      ) as Record<string, ToolHandler>;
 
-        Object.assign(allTools, functions);
-      } catch {
-        // Schema-only tool (e.g. GoogleSearch) — no functions to import
-      }
+      // Add the exported functions to registered functions so the agent can call later
+      allTools = { ...allTools, ...toolapi_functions };
+    } catch {
+      // Schema-only tool (e.g. GoogleSearch) — no functions to import or an error has occurred
+      // TODO: to log with errors properly
+      // childLogger.info({ selected_tool: selectedTool }, "The selected tool does not have functions to import, this indicates this is might be a non-mcp hosted tool")
     }
   } else {
     allSchemas = [...builtInToolPack.schemas];
