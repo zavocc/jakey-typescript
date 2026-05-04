@@ -1,4 +1,5 @@
 import logger from "../lib/pinoLogger.js";
+import crypto from "node:crypto";
 import { GoogleClient } from "../lib/genAIClients.js";
 import { tmpdir } from "node:os";
 import { mkdtemp, rm } from "node:fs/promises";
@@ -13,6 +14,7 @@ export async function uploadToGoogleFilesAPI(fileName: string, mimeType: string,
   // Create a temporary directory for the download
   const tempDir = await mkdtemp(join(tmpdir(), "jkey-download-"));
   const outputFile = join(tempDir, fileName);
+  const uuID = crypto.randomUUID();
 
   // Download the file to outputFile
   const response = await fetch(fileURL);
@@ -36,6 +38,7 @@ export async function uploadToGoogleFilesAPI(fileName: string, mimeType: string,
     uploadedFile = await GoogleClient.files.upload({
       file: outputFile,
       config: {
+        name: uuID + fileName,
         mimeType: mimeType
       }
     });

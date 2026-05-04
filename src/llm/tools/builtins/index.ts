@@ -1,6 +1,9 @@
+import logger from "../../../lib/pinoLogger.js";
 import { readdir } from "node:fs/promises";
 import { Message } from "discord.js";
 import { fileURLToPath } from "node:url";
+
+const childLogger = logger.child({ module: "llm.tools.builtins" })
 
 type ToolHandler = (discord_interaction: Message, params: Record<string, unknown>) => Promise<string>;
 
@@ -55,7 +58,7 @@ export async function fetchBuiltInToolPack(): Promise<ToolPack> {
 
         // Warn if the schema is a function tool schema but there is no matching function export in the module
         if (isFunctionToolSchema(schema) && typeof toolModule[schema.name] !== "function") {
-          console.warn(`Built-in tool ${entry.name} exports schema ${schema.name} without a matching function.`);
+          childLogger.warn({ builtin_tool_name: entry.name, schema_name: schema.name }, "Built-in tool loaded exports a schema without a matching function.");
         }
       }
 

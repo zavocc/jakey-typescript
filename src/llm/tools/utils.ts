@@ -1,7 +1,10 @@
+import logger from "../../lib/pinoLogger.js";
 import { readdir } from "node:fs/promises";
 import { Message } from "discord.js";
 import { fileURLToPath } from "node:url";
 import { fetchBuiltInToolPack } from "./builtins/index.js";
+
+const childLogger = logger.child({ module: "llm.tools.utils" });
 
 type ToolHandler = (discord_interaction: Message, params: Record<string, unknown>) => Promise<string>;
 
@@ -38,7 +41,7 @@ export async function fetchToolPack(selectedTool: string): Promise<ToolPack> {
 
     // check if schemaS have TOOL_HUMAN_NAME otherwise we skip this tool
     if (!schemaS.TOOL_HUMAN_NAME) {
-      console.warn({ selected_tool: selectedTool }, "The selected tool does not have TOOL_HUMAN_NAME, skipping...");
+      childLogger.warn({ selected_tool: selectedTool }, "The selected tool does not have TOOL_HUMAN_NAME, skipping...");
       return {
         schemas: allSchemas,
         functions: allTools,
