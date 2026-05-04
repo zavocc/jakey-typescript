@@ -1,4 +1,5 @@
 import logger from "../../lib/pinoLogger.js";
+import { loadModelsFile } from "../../llm/chat/modelsSelection.js";
 import { savePreferences } from "../../lib/preferencesDBLoader.js";
 import {
   AutocompleteInteraction,
@@ -7,22 +8,8 @@ import {
   SlashCommandBuilder,
   SlashCommandSubcommandBuilder,
 } from "discord.js";
-import { readFile } from "node:fs/promises";
-import path from "node:path";
 
 const childLogger = logger.child({ module: "commands.llm.models" });
-
-type ModelsFile = {
-  models: Array<{
-    model_alias: string;
-  }>;
-};
-
-async function loadModelsFile(): Promise<ModelsFile> {
-  const modelsPath = path.resolve(process.cwd(), "src", "models.json");
-  const raw = await readFile(modelsPath, "utf-8");
-  return JSON.parse(raw) as ModelsFile;
-}
 
 export default {
   data: new SlashCommandBuilder()

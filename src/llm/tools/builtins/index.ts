@@ -45,20 +45,21 @@ export async function fetchBuiltInToolPack(): Promise<ToolPack> {
     toolDirectories.map(async (entry) => {
       const toolModule = await import(`./${entry.name}/index.js`);
 
-      // Filter tool schemas that end with "_TOOL_SCHEMA" and add to schemas array
-      // We convert toolModule (which is an object) into entries to iterate and filter
-      // from {key: value} to [[key, value], ...]
+      // Everything is an object in javascript
+      // When importing tool module, Object.entries reveal the module is just an object, which the "const SAMPLE_TOOL_SCHEMA = []" becomes { SAMPLE_TOOL_SCHEMA: [<schema_here>] }
+      // Using Object.entries converts them into Array and turns like this [ [SAMPLE_TOOL_SCHEMA, [<schema_here>]] ]
+      // The .map extracts only the value so we can place actual schema to be pushed into schema array
       const toolSchemas = Object.entries(toolModule)
         .filter(([exportssName]) => exportssName.endsWith("TOOL_SCHEMA"))
-        .map(([, value]) => value); // only get the value, skip the key
+        .map(([, value]) => value);
 
-      // Add schema to schemas array
-      for (const schema of toolSchemas) {
-        schemas.push(schema);
+      // Iterate on toolSchemas and add schema object to schemas array
+      for (const _sel_schema of toolSchemas) {
+        schemas.push(_sel_schema);
 
         // Warn if the schema is a function tool schema but there is no matching function export in the module
-        if (isFunctionToolSchema(schema) && typeof toolModule[schema.name] !== "function") {
-          childLogger.warn({ builtin_tool_name: entry.name, schema_name: schema.name }, "Built-in tool loaded exports a schema without a matching function.");
+        if (isFunctionToolSchema(_sel_schema) && typeof toolModule[_sel_schema.name] !== "function") {
+          childLogger.warn({ tool_directory_name: entry.name, tool_name: _sel_schema.name }, "Built-in tool loaded exports a schema without a matching function.");
         }
       }
 
