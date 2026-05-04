@@ -1,6 +1,5 @@
 import { getSendableChannel } from "../../functions.js";
-import { EmbedBuilder } from "discord.js";
-import { Message, SendableChannels } from "discord.js";
+import { EmbedBuilder, Message, SendableChannels } from "discord.js";
 
 export const HAVE_A_BANANA_TOOL_SCHEMA =
 {
