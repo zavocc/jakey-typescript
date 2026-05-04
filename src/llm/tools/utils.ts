@@ -31,6 +31,7 @@ export async function fetchToolPack(selectedTool: string): Promise<ToolPack> {
         "type" in chkschema &&
         chkschema.type === "mcp_server");
 
+    // Do not import built-in tools if MCP is used
     if (hasMcpServer) {
       allSchemas = [...schemaS.TOOL_SCHEMAS];
       allTools = {};
