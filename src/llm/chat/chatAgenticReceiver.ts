@@ -88,7 +88,7 @@ export async function chatToLLM(
   // Save interaction ID throughout the loop
   interactionIDStored = response.interactionID;
 
-  // Agentic loop and response handler, we display each response modalities one by one
+  // Handle responses and agentic loop inside of this toolHasDone loop, and we display each response modalities one by one
   const toolCallHardLimit = parseInt(process.env.TOOL_CALL_TURNS_HARD_LIMIT ?? '20');
   let toolCallTurnCount = 0;
   while (!toolHasDone) {
@@ -182,8 +182,8 @@ export async function chatToLLM(
       }
     }
 
-    // Check if it executed any tool calls
-    // This will continue to next loop but will check again if another tool call is requested or not
+    // Check if it executed any tool calls so we can submit the tool response by running text_chat_completion the second time
+    // This will continue to next loop so it can output modalities but will also check again if there's a tool call issued so toolHasDone can be set to stop the loop
     if (hasToolCalls) {
       // Send all tool results for this interaction together. Each call_id belongs
       // to the interaction that produced the current response.modelOutputs.
@@ -204,10 +204,8 @@ export async function chatToLLM(
       continue;
     }
 
-    // After processing all outputs, check if the (potentially new) response has more tool calls
-    if (!hasToolCalls) {
-      toolHasDone = true;
-    }
+    // Assuming there are no proceeding tool calls requested, we can stop the loop
+    toolHasDone = true;
   }
 
   if (!interactionIDStored) {
