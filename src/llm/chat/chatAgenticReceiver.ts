@@ -145,18 +145,20 @@ export async function chatToLLM(
         const toolName = output.name;
         const toolFunctions = loadedToolPack.functions[toolName as keyof typeof loadedToolPack.functions];
 
-        // Send interstitial
-        await messageChannel.send(`-# > Used: ${toolName}`);
+        // Log tools used
+        logger.info({ tool_invoked: toolName, user_snowflake: discord_interaction.author.id }, "User LLM called tool")
+        logger.debug({ tool_name: output.name, tool_arguments: output.arguments, tool_id: output.id, user_snowflake: discord_interaction.author.id }, "Arg tool")
 
         try {
           toolResult = await toolFunctions(discord_interaction, output.arguments ?? {});
+          // Debug logs
+          logger.debug({ tool_result: toolResult, tool_name: output.name, tool_id: output.id, user_snowflake: discord_interaction.author.id }, "Tool result")
         } catch (error) {
           const errorMessage = error instanceof Error ? error.message : String(error);
           childLogger.error({
             tool_name: toolName,
             tool_error: errorMessage,
             user_snowflake: discord_interaction.author.id,
-            interaction_id: discord_interaction.id
           }, "Error calling tool");
           toolResult = `{"error": "Failed to execute tool ${toolName}, reason: ${errorMessage}"}`;
         }

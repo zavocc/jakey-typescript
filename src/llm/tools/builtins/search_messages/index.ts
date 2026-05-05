@@ -227,7 +227,7 @@ export async function read_attachments_cdn(discord_interaction: Message, params:
   childLogger.debug({ filename: params.filename, mime_type: params.mime_type, attachment_url: params.attachment_url, user_id: discord_interaction.author.id }, "File uploaded");
 
   // Send interstitial
-  const initialSend = await messageChannel.send(`🔍 Analyzing **${params.filename}** from message ${params.assoc_message_url}`);
+  const initialSend = await messageChannel.send(`📄 Analyzing **${params.filename}** from message ${params.assoc_message_url}`);
 
   // Ask question using Flash Lite model
   const response = await GoogleClient.models.generateContent({
@@ -240,7 +240,7 @@ export async function read_attachments_cdn(discord_interaction: Message, params:
     }
   });
 
-  await initialSend.edit(`🔍 Read **${params.filename}** from message ${params.assoc_message_url}`);
+  await initialSend.edit(`✅ Read **${params.filename}** from message ${params.assoc_message_url}`);
 
   if (!response.candidates?.length) {
     return "No response found";
