@@ -27,13 +27,6 @@ export const SEARCH_MESSAGE_TOOL_SCHEMA =
   parameters: {
     type: "object",
     properties: {
-      queries: {
-        type: "array",
-        items: {
-          type: "string"
-        },
-        description: "The search queries to look for in the messages. If possible, break down all possible queries based from user's intent like adding expanded abbreviations. You can also search by username or snowflake user ID when user mentioned, if it mentions multiple subjects, fan them out in queries seperately.",
-      },
       searchTypes: {
         type: "string",
         enum: [
@@ -42,6 +35,13 @@ export const SEARCH_MESSAGE_TOOL_SCHEMA =
           "FIRST_FIFTY_MESSAGES"
         ],
         description: "Types of messages to pull from, QUERIES will search based on queries while the other two will ignore, ATTACHMENTS pulls and filters messages with files only, PULL_FIRST_FIFTY_MESSAGES will pull the first 50 messages regardless of criteria. It can be combined with before or after to paginate results."
+      },
+      queries: {
+        type: "array",
+        items: {
+          type: "string"
+        },
+        description: "The search queries to look for in the messages. If possible, break down all possible queries based from user's intent like adding expanded abbreviations. You can also search by username or snowflake user ID when user mentioned, if it mentions multiple subjects, fan them out in queries seperately.",
       },
       before: {
         type: "string",
@@ -52,7 +52,7 @@ export const SEARCH_MESSAGE_TOOL_SCHEMA =
         description: "Search for messages after the message with its associated snowflake. Use this to paginate results if initial results from latest pull doesn't match the criteria.",
       }
     },
-    required: ["queries", "searchTypes"],
+    required: ["searchTypes"],
   }
 }
 
@@ -85,7 +85,7 @@ export const MULTIMODAL_READ_DISCORD_CDN_TOOL_SCHEMA =
   }
 }
 
-export async function search_messages(discord_interaction: Message, params: { queries: Array<string>, searchTypes: "QUERIES" | "ATTACHMENTS" | "FIRST_FIFTY_MESSAGES", before?: string, after?: string}): Promise<string> {
+export async function search_messages(discord_interaction: Message, params: { searchTypes: "QUERIES" | "ATTACHMENTS" | "FIRST_FIFTY_MESSAGES", queries?: Array<string>, before?: string, after?: string}): Promise<string> {
   const messageChannel: SendableChannels = getSendableChannel(discord_interaction);
 
   // Before and after are mutually exclusive
@@ -111,11 +111,18 @@ export async function search_messages(discord_interaction: Message, params: { qu
   const messagesResultList = await discord_interaction.channel.messages.fetch({ limit: messageLimit, before: params.before, after: params.after });
   childLogger.debug({ tool: 'search_messages', mode: params.searchTypes, queries: params.queries, user_snowflake: discord_interaction.author.id }, "Searched for messages")
   if (params.searchTypes === "QUERIES") {
+    // Check if params.queries is set  and has at least one query
+    const queries = params.queries;
+
+    if (!queries?.length) {
+       return "No queries specified. Please provide at least one query to search for.";
+     }
+
     // Perform iterative filtering from messages
     messagesResultList.forEach((message) => {
       // Check for each messages if it matches the query critieria, which includes content, author username, author display name, and author id
       // this check uses expression body to return boolean value if match found
-      if (params.queries.some(query => message.content.includes(query) ||
+      if (queries.some(query => message.content.includes(query) ||
       message.author.username.includes(query) ||
       message.author.id.includes(query) || message.author.displayName.includes(query))) {
         // Add matching results
@@ -248,5 +255,8 @@ export async function read_attachments_cdn(discord_interaction: Message, params:
 
   const candidate = response.candidates[0];
 
-  return candidate.content?.parts?.[0]?.text ?? "No response returned";
+  return JSON.stringify({
+    guidelines: "If the following attachment matches the criteria, provide the attachment link either as Discord jump URL or direct CDN link.",
+    subAgentresponse: candidate.content?.parts?.[0]?.text ?? "No response returned"
+  });
 }

@@ -92,6 +92,7 @@ export async function chatToLLM(
   const toolCallHardLimit = parseInt(process.env.TOOL_CALL_TURNS_HARD_LIMIT ?? '20');
   let toolCallTurnCount = 0;
   while (!toolHasDone) {
+    // Collect tool results including those that ran in parallel before sending
     let hasToolCalls = false;
     const toolResults = [];
 
