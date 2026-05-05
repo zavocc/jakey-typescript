@@ -1,7 +1,11 @@
+import logger from "../../../../lib/pinoLogger.js";
 import { uploadToGoogleFilesAPI } from "../../../fileUpload.js";
 import { GoogleClient } from "../../../../lib/genAIClients.js";
 import { getSendableChannel } from "../../functions.js";
+import { createUserContent, createPartFromUri } from "@google/genai";
 import { EmbedBuilder, Message, type SendableChannels } from "discord.js";
+
+const childLogger = logger.child({ module: "llm.tools.builtins.search_messages" });
 
 type ResultsShape = {
   id: string;
@@ -30,20 +34,25 @@ export const SEARCH_MESSAGE_TOOL_SCHEMA =
         },
         description: "The search queries to look for in the messages. If possible, break down all possible queries based from user's intent like adding expanded abbreviations. You can also search by username or snowflake user ID when user mentioned, if it mentions multiple subjects, fan them out in queries seperately.",
       },
+      searchTypes: {
+        type: "string",
+        enum: [
+          "QUERIES",
+          "ATTACHMENTS",
+          "FIRST_FIFTY_MESSAGES"
+        ],
+        description: "Types of messages to pull from, QUERIES will search based on queries while the other two will ignore, ATTACHMENTS pulls and filters messages with files only, PULL_FIRST_FIFTY_MESSAGES will pull the first 50 messages regardless of criteria. It can be combined with before or after to paginate results."
+      },
       before: {
         type: "string",
-        description: "Search for messages before the message and its associated snowflake. Use this to paginate results if initial results from latest pull doesn't match the criteria.",
+        description: "Search for messages before the message with its associated snowflake. Use this to paginate results if initial results from latest pull doesn't match the criteria.",
       },
       after: {
         type: "string",
-        description: "Search for messages after the message and its associated snowflake. Use this to paginate results if initial results from latest pull doesn't match the criteria.",
-      },
-      showAllMessages: {
-        type: "boolean",
-        description: "Shows all message results upto 50, may increase irrelevancy and consumes more context. Combine this with pagination to ensure even blank messages with possible attachments are included.",
+        description: "Search for messages after the message with its associated snowflake. Use this to paginate results if initial results from latest pull doesn't match the criteria.",
       }
     },
-    required: ["queries"],
+    required: ["queries", "searchTypes"],
   }
 }
 
@@ -76,7 +85,7 @@ export const MULTIMODAL_READ_DISCORD_CDN_TOOL_SCHEMA =
   }
 }
 
-export async function search_messages(discord_interaction: Message, params: { queries: Array<string>, before?: string, after?: string, showAllMessages?: boolean }): Promise<string> {
+export async function search_messages(discord_interaction: Message, params: { queries: Array<string>, searchTypes: "QUERIES" | "ATTACHMENTS" | "FIRST_FIFTY_MESSAGES", before?: string, after?: string}): Promise<string> {
   const messageChannel: SendableChannels = getSendableChannel(discord_interaction);
 
   // Before and after are mutually exclusive
@@ -94,14 +103,14 @@ export async function search_messages(discord_interaction: Message, params: { qu
 
   // Determine optimal count based on showAllMessages
   let messageLimit = 100;
-  if (params.showAllMessages) {
+  if (params.searchTypes !== "QUERIES") {
     messageLimit = 50;
   }
 
   // Search through messages in the current channel
   const messagesResultList = await discord_interaction.channel.messages.fetch({ limit: messageLimit, before: params.before, after: params.after });
-
-  if (!params.showAllMessages) {
+  childLogger.debug({ tool: 'search_messages', mode: params.searchTypes, queries: params.queries, user_snowflake: discord_interaction.author.id }, "Searched for messages")
+  if (params.searchTypes === "QUERIES") {
     // Perform iterative filtering from messages
     messagesResultList.forEach((message) => {
       // Check for each messages if it matches the query critieria, which includes content, author username, author display name, and author id
@@ -110,6 +119,22 @@ export async function search_messages(discord_interaction: Message, params: { qu
       message.author.username.includes(query) ||
       message.author.id.includes(query) || message.author.displayName.includes(query))) {
         // Add matching results
+        searchResults.push({
+          id: message.id,
+          content: message.content,
+          author: message.author.username,
+          author_id: message.author.id,
+          author_display_name: message.author.displayName,
+          timestamp: message.createdTimestamp,
+          url: message.url,
+          message_snowflake: message.id,
+          attachments: message.attachments.size > 0 ? message.attachments.map(attachment => ({ url: attachment.url, filename: attachment.name, mime_type: attachment.contentType })) : null,
+        });
+      }
+    });
+  } else if (params.searchTypes === "ATTACHMENTS") {
+    messagesResultList.forEach((message) => {
+      if (message.attachments.size > 0) {
         searchResults.push({
           id: message.id,
           content: message.content,
@@ -166,8 +191,10 @@ export async function search_messages(discord_interaction: Message, params: { qu
     .setColor(0x0000FF)
     .setDescription(resultBody);
 
-  if (!params.showAllMessages) {
+  if (params.searchTypes === "QUERIES") {
     await messageChannel.send({ content: `🔍 Found **${urlCount}** messages`, embeds: [resultsEmbed] });
+  } else if (params.searchTypes === "ATTACHMENTS") {
+    await messageChannel.send(`🔍 Pulled **${searchResults.length}** messages with attachments`);
   } else {
     await messageChannel.send("🔍 Searched last 50 messages for deeper analysis");
   }
@@ -195,7 +222,9 @@ export async function read_attachments_cdn(discord_interaction: Message, params:
   }
 
   // Upload file
+  childLogger.debug({ filename: params.filename, mime_type: params.mime_type, attachment_url: params.attachment_url, user_id: discord_interaction.author.id }, "Preparing to upload file using uploadToGoogleFilesAPI");
   const fileURL = await uploadToGoogleFilesAPI(params.filename, params.mime_type, params.attachment_url);
+  childLogger.debug({ filename: params.filename, mime_type: params.mime_type, attachment_url: params.attachment_url, user_id: discord_interaction.author.id }, "File uploaded");
 
   // Send interstitial
   const initialSend = await messageChannel.send(`🔍 Analyzing **${params.filename}** from message ${params.assoc_message_url}`);
@@ -203,7 +232,7 @@ export async function read_attachments_cdn(discord_interaction: Message, params:
   // Ask question using Flash Lite model
   const response = await GoogleClient.models.generateContent({
     model: "gemini-2.5-flash-lite",
-    contents: ["Generate elaborate descriptions of this file, write a summary, and extract exact text from the screen if it's an image or video", fileURL],
+    contents: createUserContent([createPartFromUri(fileURL, params.mime_type), "Generate elaborate descriptions of this file, write a summary, and extract exact text from the screen if it's an image or video"]),
     config: {
       thinkingConfig: {
         thinkingBudget: 0
