@@ -14,9 +14,9 @@ type ResultsShape = {
   author_id: string;
   author_display_name: string;
   timestamp: number;
-  url: string | null;
+  jump_url: string | null;
   message_snowflake: string;
-  attachments: Array<{ url: string, filename: string, mime_type: string | null }> | null;
+  attachments: Array<{ filename: string, mime_type: string | null, attachment_url: string }> | null;
 }
 
 export const SEARCH_MESSAGE_TOOL_SCHEMA =
@@ -68,10 +68,6 @@ export const MULTIMODAL_READ_DISCORD_CDN_TOOL_SCHEMA =
         type: "string",
         description: "The Discord jump URL of the message containing attachments for citation",
       },
-      attachment_url: {
-        type: "string",
-        description: "The URL of the attachment to read",
-      },
       filename: {
         type: "string",
         description: "The filename of the attachment",
@@ -79,6 +75,10 @@ export const MULTIMODAL_READ_DISCORD_CDN_TOOL_SCHEMA =
       mime_type: {
         type: "string",
         description: "The mime type of the attachment",
+      },
+      attachment_url: {
+        type: "string",
+        description: "The URL of the attachment to read",
       }
     },
     required: ["assoc_message_url", "attachment_url", "filename", "mime_type"],
@@ -133,9 +133,9 @@ export async function search_messages(discord_interaction: Message, params: { se
           author_id: message.author.id,
           author_display_name: message.author.displayName,
           timestamp: message.createdTimestamp,
-          url: message.url,
+          jump_url: message.url,
           message_snowflake: message.id,
-          attachments: message.attachments.size > 0 ? message.attachments.map(attachment => ({ url: attachment.url, filename: attachment.name, mime_type: attachment.contentType })) : null,
+          attachments: message.attachments.size > 0 ? message.attachments.map(attachment => ({ filename: attachment.name, mime_type: attachment.contentType, attachment_url: attachment.url })) : null,
         });
       }
     });
@@ -149,9 +149,9 @@ export async function search_messages(discord_interaction: Message, params: { se
           author_id: message.author.id,
           author_display_name: message.author.displayName,
           timestamp: message.createdTimestamp,
-          url: message.url,
+          jump_url: message.url,
           message_snowflake: message.id,
-          attachments: message.attachments.size > 0 ? message.attachments.map(attachment => ({ url: attachment.url, filename: attachment.name, mime_type: attachment.contentType })) : null,
+          attachments: message.attachments.size > 0 ? message.attachments.map(attachment => ({ filename: attachment.name, mime_type: attachment.contentType, attachment_url: attachment.url })) : null,
         });
       }
     });
@@ -165,15 +165,15 @@ export async function search_messages(discord_interaction: Message, params: { se
         author_id: message.author.id,
         author_display_name: message.author.displayName,
         timestamp: message.createdTimestamp,
-        url: message.url,
+        jump_url: message.url,
         message_snowflake: message.id,
-        attachments: message.attachments.size > 0 ? message.attachments.map(attachment => ({ url: attachment.url, filename: attachment.name, mime_type: attachment.contentType })) : null,
+        attachments: message.attachments.size > 0 ? message.attachments.map(attachment => ({ filename: attachment.name, mime_type: attachment.contentType, attachment_url: attachment.url, })) : null,
       });
     });
   }
 
   // Count no of URLs
-  const urlCount = searchResults.filter(result => result.url).length;
+  const urlCount = searchResults.filter(result => result.jump_url).length;
 
   // Create embed to list URLs upto 10 results
   const efficientSlicedResults = searchResults.slice(0, 10);
@@ -182,12 +182,12 @@ export async function search_messages(discord_interaction: Message, params: { se
     const strippedContent = result.content.replace(/[^\w\s.]/gi, '').replace(/\r?\n/g, ' ').trim();
 
     // Check if we have URL
-    if (result.url) {
+    if (result.jump_url) {
       // if strippedContent is blank, only show URL
       if (strippedContent === '') {
-        return `- [No content](${result.url})`;
+        return `- [No content](${result.jump_url})`;
       } else {
-        return `- [${strippedContent.slice(0, 50)}](${result.url})...`;
+        return `- [${strippedContent.slice(0, 50)}](${result.jump_url})...`;
       }
     } else {
       return "- Found something but an error occurred"
@@ -219,7 +219,7 @@ export async function search_messages(discord_interaction: Message, params: { se
 }
 
 // For reading files
-export async function read_attachments_cdn(discord_interaction: Message, params: { assoc_message_url: string; attachment_url: string, filename: string, mime_type: string }): Promise<string> {
+export async function read_attachments_cdn(discord_interaction: Message, params: { assoc_message_url: string; filename: string, mime_type: string, attachment_url: string }): Promise<string> {
   const messageChannel: SendableChannels = getSendableChannel(discord_interaction);
 
   // Detect if we're in a server

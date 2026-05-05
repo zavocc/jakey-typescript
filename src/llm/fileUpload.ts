@@ -1,5 +1,4 @@
 import logger from "../lib/pinoLogger.js";
-import crypto from "node:crypto";
 import { GoogleClient } from "../lib/genAIClients.js";
 import { tmpdir } from "node:os";
 import { mkdtemp, rm } from "node:fs/promises";
@@ -37,7 +36,6 @@ export async function uploadToGoogleFilesAPI(fileName: string, mimeType: string,
     uploadedFile = await GoogleClient.files.upload({
       file: outputFile,
       config: {
-        name: crypto.randomUUID(),
         mimeType: mimeType
       }
     });
