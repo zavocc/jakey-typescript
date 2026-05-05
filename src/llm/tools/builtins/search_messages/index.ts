@@ -14,7 +14,7 @@ export const SEARCH_MESSAGE_TOOL_SCHEMA =
         items: {
           type: "string"
         },
-        description: "The search queries to look for in the messages. If possible, break down all possible queries based from user's intent like adding expanded abbreviations.",
+        description: "The search queries to look for in the messages. If possible, break down all possible queries based from user's intent like adding expanded abbreviations. You can also search by username or snowflake user ID when user mentioned",
       },
       before: {
         type: "string",
@@ -61,12 +61,13 @@ export async function search_messages(discord_interaction: Message, params: { qu
   }
 
   // Search through messages in the current channel
-  const messages = await discord_interaction.channel.messages.fetch({ limit: messageLimit, before: params.before, after: params.after });
+  const messagesResultList = await discord_interaction.channel.messages.fetch({ limit: messageLimit, before: params.before, after: params.after });
 
   if (!params.showAllMessages) {
-    // Perform iterative filtering from messages result list based on multi query search
-    messages.forEach((message) => {
-      if (params.queries.some(query => message.content.includes(query))) {
+    // Perform iterative filtering from messages
+    messagesResultList.forEach((message) => {
+      // Check for each messages if it matches the query critieria, which includes content, author username, and author id
+      if (params.queries.some(query => message.content.includes(query) || message.author.username.includes(query) || message.author.id.includes(query))) {
         searchResults.push({
           id: message.id,
           content: message.content,
@@ -79,7 +80,7 @@ export async function search_messages(discord_interaction: Message, params: { qu
       }
     });
   } else {
-    messages.forEach((message) => {
+    messagesResultList.forEach((message) => {
       searchResults.push({
         id: message.id,
         content: message.content,
@@ -99,11 +100,16 @@ export async function search_messages(discord_interaction: Message, params: { qu
   const efficientSlicedResults = searchResults.slice(0, 10);
   const resultBody = efficientSlicedResults.map((result) => {
     // Strip symbols from result.content and strip newlines
-    const strippedContent = result.content.replace(/[^\w\s]/gi, '').replace(/\r?\n/g, ' ');
+    const strippedContent = result.content.replace(/[^\w\s.]/gi, '').replace(/\r?\n/g, ' ').trim();
 
     // Check if we have URL
     if (result.url) {
-      return `- [${strippedContent.slice(0, 50)}](${result.url})...`;
+      // if strippedContent is blank, only show URL
+      if (strippedContent === '') {
+        return `- [No content](${result.url})`;
+      } else {
+        return `- [${strippedContent.slice(0, 50)}](${result.url})...`;
+      }
     } else {
       return "- Found something but an error occurred"
     }
