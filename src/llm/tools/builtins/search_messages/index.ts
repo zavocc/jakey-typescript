@@ -1,11 +1,25 @@
+import { uploadToGoogleFilesAPI } from "../../../fileUpload.js";
+import { GoogleClient } from "../../../../lib/genAIClients.js";
 import { getSendableChannel } from "../../functions.js";
 import { EmbedBuilder, Message, type SendableChannels } from "discord.js";
+
+type ResultsShape = {
+  id: string;
+  content: string;
+  author: string;
+  author_id: string;
+  author_display_name: string;
+  timestamp: number;
+  url: string | null;
+  message_snowflake: string;
+  attachments: Array<{ url: string, filename: string, mime_type: string | null }> | null;
+}
 
 export const SEARCH_MESSAGE_TOOL_SCHEMA =
 {
   type: "function",
   name: "search_messages",
-  description: "Search through Discord messages in the current channel",
+  description: "Search through Discord messages in the current channel, this pulls the latest messages first.",
   parameters: {
     type: "object",
     properties: {
@@ -18,34 +32,57 @@ export const SEARCH_MESSAGE_TOOL_SCHEMA =
       },
       before: {
         type: "string",
-        description: "Search for messages before the message and its associated snowflake. Do not use this unless there is a previous tool result present with message snowflakes.",
+        description: "Search for messages before the message and its associated snowflake. Use this to paginate results if initial results from latest pull doesn't match the criteria.",
       },
       after: {
         type: "string",
-        description: "Search for messages after the message and its associated snowflake. Do not use this unless there is a previous tool result present with message snowflakes.",
+        description: "Search for messages after the message and its associated snowflake. Use this to paginate results if initial results from latest pull doesn't match the criteria.",
       },
       showAllMessages: {
         type: "boolean",
-        description: "Shows all message results upto 50, may increase irrelevancy and consumes more context. Do not use this unless deeper search is required (e.g. message snowflake inclusion or exclusion)",
+        description: "Shows all message results upto 50, may increase irrelevancy and consumes more context. Combine this with pagination to ensure even blank messages with possible attachments are included.",
       }
     },
     required: ["queries"],
   }
 }
 
-type ResultsShape = {
-  id: string;
-  content: string;
-  author: string;
-  author_id: string;
-  author_display_name: string;
-  timestamp: number;
-  url: string | null;
-  message_snowflake: string;
+export const MULTIMODAL_READ_DISCORD_CDN_TOOL_SCHEMA =
+{
+  type: "function",
+  name: "read_attachments_cdn",
+  description: "Reads attachment for precise search and verify passages from user's request, only use this after calling search_messages with attachments",
+  parameters: {
+    type: "object",
+    properties: {
+      assoc_message_url: {
+        type: "string",
+        description: "The URL of the message containing messages for citation",
+      },
+      attachment_url: {
+        type: "string",
+        description: "The URL of the attachment to read",
+      },
+      filename: {
+        type: "string",
+        description: "The filename of the attachment",
+      },
+      mime_type: {
+        type: "string",
+        description: "The mime type of the attachment",
+      }
+    },
+    required: ["assoc_message_url", "attachment_url", "filename", "mime_type"],
+  }
 }
 
 export async function search_messages(discord_interaction: Message, params: { queries: Array<string>, before?: string, after?: string, showAllMessages?: boolean }): Promise<string> {
   const messageChannel: SendableChannels = getSendableChannel(discord_interaction);
+
+  // Before and after are mutually exclusive
+  if (params.before && params.after) {
+    return "Before and after parameters are mutually exclusive. Please provide only one of them."
+  }
 
   // Detect if we're in a server
   const isGuild = discord_interaction.guildId !== null;
@@ -81,7 +118,8 @@ export async function search_messages(discord_interaction: Message, params: { qu
           author_display_name: message.author.displayName,
           timestamp: message.createdTimestamp,
           url: message.url,
-          message_snowflake: message.id
+          message_snowflake: message.id,
+          attachments: message.attachments.size > 0 ? message.attachments.map(attachment => ({ url: attachment.url, filename: attachment.name, mime_type: attachment.contentType })) : null,
         });
       }
     });
@@ -96,7 +134,8 @@ export async function search_messages(discord_interaction: Message, params: { qu
         author_display_name: message.author.displayName,
         timestamp: message.createdTimestamp,
         url: message.url,
-        message_snowflake: message.id
+        message_snowflake: message.id,
+        attachments: message.attachments.size > 0 ? message.attachments.map(attachment => ({ url: attachment.url, filename: attachment.name, mime_type: attachment.contentType })) : null,
       });
     });
   }
@@ -135,9 +174,50 @@ export async function search_messages(discord_interaction: Message, params: { qu
 
   // Add guidelines
   const finalToolResult = {
-    protip: "Use the message_snowflake only if necessary to find messages before or after a specific message",
+    guidelines: {
+      pagination: "Use the message_snowflake only if necessary to find messages before or after a specific message",
+      file_attachments: "If any search result contains attachments that may be relevant to the user's request, you MUST call read_attachments_cdn for the relevant attachment(s) before answering. Do this even if the answer appears obvious from the message text, filename, attachment name, or surrounding context. Filenames and textual metadata can be incomplete or misleading, so never rely on them alone. If the user explicitly asks to read/check/open/inspect attachments, calling read_attachments_cdn is mandatory. Skipping this tool call before answering is a failure to follow these search result guidelines.",
+    },
     results: searchResults
-  }
+  };
 
   return JSON.stringify(finalToolResult);
+}
+
+// For reading files
+export async function read_attachments_cdn(discord_interaction: Message, params: { assoc_message_url: string; attachment_url: string, filename: string, mime_type: string }): Promise<string> {
+  const messageChannel: SendableChannels = getSendableChannel(discord_interaction);
+
+  // Detect if we're in a server
+  const isGuild = discord_interaction.guildId !== null;
+  if (!isGuild) {
+    return "This command can only be used in a server.";
+  }
+
+  // Upload file
+  const fileURL = await uploadToGoogleFilesAPI(params.filename, params.mime_type, params.attachment_url);
+
+  // Send interstitial
+  const initialSend = await messageChannel.send(`🔍 Analyzing **${params.filename}** from message ${params.assoc_message_url}`);
+
+  // Ask question using Flash Lite model
+  const response = await GoogleClient.models.generateContent({
+    model: "gemini-2.5-flash-lite",
+    contents: ["Generate elaborate descriptions of this file, write a summary, and extract exact text from the screen if it's an image or video", fileURL],
+    config: {
+      thinkingConfig: {
+        thinkingBudget: 0
+      }
+    }
+  });
+
+  await initialSend.edit(`🔍 Read **${params.filename}** from message ${params.assoc_message_url}`);
+
+  if (!response.candidates?.length) {
+    return "No response found";
+  }
+
+  const candidate = response.candidates[0];
+
+  return candidate.content?.parts?.[0]?.text ?? "No response returned";
 }

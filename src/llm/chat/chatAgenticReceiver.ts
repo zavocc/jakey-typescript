@@ -3,7 +3,7 @@ import { getModelProps } from "./modelsSelection.js";
 import type { ModelProps } from "../../types/schemas.js";
 import type { Message, SendableChannels } from 'discord.js';
 import { JAKEY_SYSTEM_PROMPT } from "../../data/sysprompts.js";
-import { text_chat_completion } from "../generateContent.js";
+import { text_chat_completion } from "../generateContentChat.js";
 import { loadPreferences, savePreferences } from "../../lib/preferencesDBLoader.js";
 import { fileTypeFromBuffer } from 'file-type';
 
@@ -151,20 +151,21 @@ export async function chatToLLM(
         try {
           toolResult = await toolFunctions(discord_interaction, output.arguments ?? {});
         } catch (error) {
+          const errorMessage = error instanceof Error ? error.message : String(error);
           childLogger.error({
             tool_name: toolName,
-            tool_error: error,
+            tool_error: errorMessage,
             user_snowflake: discord_interaction.author.id,
             interaction_id: discord_interaction.id
           }, "Error calling tool");
-          toolResult = `{"error": "Failed to execute tool ${toolName}, reason: ${error instanceof Error ? error.message : String(error)}"}`;
+          toolResult = `{"error": "Failed to execute tool ${toolName}, reason: ${errorMessage}"}`;
         }
 
         toolResults.push({
           type: 'function_result' as const,
           name: output.name,
           call_id: output.id,
-          result: toolResult
+          result: `{"api_result": ${toolResult}}`
         });
       }
     }
