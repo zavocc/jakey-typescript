@@ -14,7 +14,7 @@ export const SEARCH_MESSAGE_TOOL_SCHEMA =
         items: {
           type: "string"
         },
-        description: "The search queries to look for in the messages. If possible, break down all possible queries based from user's intent like adding expanded abbreviations. You can also search by username or snowflake user ID when user mentioned",
+        description: "The search queries to look for in the messages. If possible, break down all possible queries based from user's intent like adding expanded abbreviations. You can also search by username or snowflake user ID when user mentioned, if it mentions multiple subjects, fan them out in queries seperately.",
       },
       before: {
         type: "string",
