@@ -89,6 +89,8 @@ export async function chatToLLM(
   interactionIDStored = response.interactionID;
 
   // Agentic loop and response handler, we display each response modalities one by one
+  const toolCallHardLimit = parseInt(process.env.TOOL_CALL_TURNS_HARD_LIMIT ?? '20');
+  let toolCallTurnCount = 0;
   while (!toolHasDone) {
     let hasToolCalls = false;
     const toolResults = [];
@@ -146,13 +148,18 @@ export async function chatToLLM(
         const toolFunctions = loadedToolPack.functions[toolName as keyof typeof loadedToolPack.functions];
 
         // Log tools used
-        logger.info({ tool_invoked: toolName, user_snowflake: discord_interaction.author.id }, "User LLM called tool")
+        logger.info({ tool_invoked: toolName, tool_id: output.id, user_snowflake: discord_interaction.author.id }, "User LLM called tool")
         logger.debug({ tool_name: output.name, tool_arguments: output.arguments, tool_id: output.id, user_snowflake: discord_interaction.author.id }, "Arg tool")
 
         try {
-          toolResult = await toolFunctions(discord_interaction, output.arguments ?? {});
-          // Debug logs
-          logger.debug({ tool_result: toolResult, tool_name: output.name, tool_id: output.id, user_snowflake: discord_interaction.author.id }, "Tool result")
+          // Call tools if it doesn't reach the max limit, if it does, we output the error instead
+          if (toolCallTurnCount >= toolCallHardLimit) {
+            toolResult = `{"error": "Reached tool call hard limit. Please try again later."}`;
+            logger.error({ 'tool_name': output.name, 'tool_id': output.id, 'user_snowflake': discord_interaction.author.id }, "Max tool calls limit reached")
+          } else {
+            toolResult = await toolFunctions(discord_interaction, output.arguments ?? {});
+            logger.debug({ tool_result: toolResult, tool_name: output.name, tool_id: output.id, user_snowflake: discord_interaction.author.id }, "Tool result")
+          }
         } catch (error) {
           const errorMessage = error instanceof Error ? error.message : String(error);
           childLogger.error({
@@ -161,6 +168,9 @@ export async function chatToLLM(
             user_snowflake: discord_interaction.author.id,
           }, "Error calling tool");
           toolResult = `{"error": "Failed to execute tool ${toolName}, reason: ${errorMessage}"}`;
+        } finally {
+          // Increment tool call turn counter
+          toolCallTurnCount += 1;
         }
 
         toolResults.push({
