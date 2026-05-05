@@ -38,6 +38,7 @@ type ResultsShape = {
   content: string;
   author: string;
   author_id: string;
+  author_display_name: string;
   timestamp: number;
   url: string | null;
   message_snowflake: string;
@@ -66,13 +67,18 @@ export async function search_messages(discord_interaction: Message, params: { qu
   if (!params.showAllMessages) {
     // Perform iterative filtering from messages
     messagesResultList.forEach((message) => {
-      // Check for each messages if it matches the query critieria, which includes content, author username, and author id
-      if (params.queries.some(query => message.content.includes(query) || message.author.username.includes(query) || message.author.id.includes(query))) {
+      // Check for each messages if it matches the query critieria, which includes content, author username, author display name, and author id
+      // this check uses expression body to return boolean value if match found
+      if (params.queries.some(query => message.content.includes(query) ||
+      message.author.username.includes(query) ||
+      message.author.id.includes(query) || message.author.displayName.includes(query))) {
+        // Add matching results
         searchResults.push({
           id: message.id,
           content: message.content,
           author: message.author.username,
           author_id: message.author.id,
+          author_display_name: message.author.displayName,
           timestamp: message.createdTimestamp,
           url: message.url,
           message_snowflake: message.id
@@ -80,12 +86,14 @@ export async function search_messages(discord_interaction: Message, params: { qu
       }
     });
   } else {
+    // This does lazyily pull all first 50 messages to context regardless of search query match
     messagesResultList.forEach((message) => {
       searchResults.push({
         id: message.id,
         content: message.content,
         author: message.author.username,
         author_id: message.author.id,
+        author_display_name: message.author.displayName,
         timestamp: message.createdTimestamp,
         url: message.url,
         message_snowflake: message.id
