@@ -66,7 +66,7 @@ export const MULTIMODAL_READ_DISCORD_CDN_TOOL_SCHEMA =
     properties: {
       assoc_message_url: {
         type: "string",
-        description: "The URL of the message containing messages for citation",
+        description: "The Discord jump URL of the message containing attachments for citation",
       },
       attachment_url: {
         type: "string",
