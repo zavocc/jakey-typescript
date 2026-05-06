@@ -1,6 +1,9 @@
+import logger from '../lib/pinoLogger.js';
 import { GoogleClient } from '../lib/genAIClients.js';
 import { uploadToGoogleFilesAPI } from './fileUpload.js';
 import type { Interactions } from '@google/genai';
+
+const childLogger = logger.child({ module: 'llm.generateContentChat' });
 
 export async function text_chat_completion(
   model: string,
@@ -98,6 +101,19 @@ export async function text_chat_completion(
   if (!interactionsResult.outputs) {
     throw new Error('No output received from the model.');
   }
+
+  // Debug logs
+  if (interactionsResult.usage) childLogger.debug({
+    prompt: prompt,
+    totalInputtokenCnt: interactionsResult.usage.total_input_tokens,
+    totalOutputtokenCnt: interactionsResult.usage.total_output_tokens,
+    totalThinktokenCnt: interactionsResult.usage.total_thought_tokens,
+    totalCachedtokenCnt: interactionsResult.usage.total_cached_tokens,
+    totalTooltokenCnt: interactionsResult.usage.total_tool_use_tokens,
+    totalTokens: interactionsResult.usage.total_tokens,
+    responsesOutputs: interactionsResult.outputs
+  }, "Generated content chat");
+
 
   return {
     modelOutputs: interactionsResult.outputs,

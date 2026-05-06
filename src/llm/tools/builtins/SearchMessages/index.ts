@@ -13,7 +13,7 @@ type ResultsShape = {
   author: string;
   author_id: string;
   author_display_name: string;
-  timestamp: number;
+  created_at: string;
   jump_url: string | null;
   message_snowflake: string;
   attachments: Array<{ filename: string, mime_type: string | null, attachment_url: string }> | null;
@@ -96,14 +96,11 @@ export async function search_messages(discord_interaction: Message, params: { se
 
   const searchResults: Array<ResultsShape> = [];
 
-  // Determine optimal count based on showAllMessages
-  let messageLimit = 100;
-  if (params.searchTypes !== "QUERIES") {
-    messageLimit = 50;
-  }
+  // Message limit (may change)
+  const messagesLimit = 50;
 
   // Search through messages in the current channel
-  const messagesResultList = await discord_interaction.channel.messages.fetch({ limit: messageLimit, before: params.before, after: params.after, cache: false });
+  const messagesResultList = await discord_interaction.channel.messages.fetch({ limit: messagesLimit, before: params.before, after: params.after, cache: false });
   childLogger.debug({ tool: 'search_messages', mode: params.searchTypes, queries: params.queries, user_snowflake: discord_interaction.author.id }, "Searched for messages")
   if (params.searchTypes === "QUERIES") {
     // Check if params.queries is set  and has at least one query
@@ -127,7 +124,7 @@ export async function search_messages(discord_interaction: Message, params: { se
           author: message.author.username,
           author_id: message.author.id,
           author_display_name: message.author.displayName,
-          timestamp: message.createdTimestamp,
+          created_at: message.createdAt.toISOString(),
           jump_url: message.url,
           message_snowflake: message.id,
           attachments: message.attachments.size > 0 ? message.attachments.map(attachment => ({ filename: attachment.name, mime_type: attachment.contentType, attachment_url: attachment.url })) : null,
@@ -143,7 +140,7 @@ export async function search_messages(discord_interaction: Message, params: { se
           author: message.author.username,
           author_id: message.author.id,
           author_display_name: message.author.displayName,
-          timestamp: message.createdTimestamp,
+          created_at: message.createdAt.toISOString(),
           jump_url: message.url,
           message_snowflake: message.id,
           attachments: message.attachments.size > 0 ? message.attachments.map(attachment => ({ filename: attachment.name, mime_type: attachment.contentType, attachment_url: attachment.url })) : null,
@@ -159,7 +156,7 @@ export async function search_messages(discord_interaction: Message, params: { se
         author: message.author.username,
         author_id: message.author.id,
         author_display_name: message.author.displayName,
-        timestamp: message.createdTimestamp,
+        created_at: message.createdAt.toISOString(),
         jump_url: message.url,
         message_snowflake: message.id,
         attachments: message.attachments.size > 0 ? message.attachments.map(attachment => ({ filename: attachment.name, mime_type: attachment.contentType, attachment_url: attachment.url, })) : null,
@@ -210,7 +207,10 @@ export async function search_messages(discord_interaction: Message, params: { se
   const finalToolResult = {
     guidelines: {
       pagination: "Use the message_snowflake or based on user's specified date only if necessary to find messages before or after a specific message if initial search results are not sufficient.",
-      file_attachments: "If any search result contains attachments that may be relevant to the user's request, you MUST call read_attachments_cdn for the relevant attachment(s) before answering. Do this even if the answer appears obvious from the message text, filename, attachment name, or surrounding context. Filenames and textual metadata can be incomplete or misleading, so never rely on them alone. If the user explicitly asks to read/check/open/inspect attachments, calling read_attachments_cdn is mandatory. Skipping this tool call before answering is a failure to follow these search result guidelines. In addition, if there is a file attachment but with less obvious hints like randomly named filenames and/or lack of context based on messages surrounds context with it, consider reading it before paginating.",
+      file_attachments: {
+        rules: "If the user's request requires information from files attached to messages, or requires verifying which file matches exact constraints, visual/content descriptions, partially recalled details, or what the user is picturing, you MUST call read_attachments_cdn for the relevant attachment(s) before answering. Do this even if the answer appears obvious from the message text, filename, attachment name, or surrounding context. Filenames and textual metadata can be incomplete or misleading, so never rely on them alone for file-content questions or file-matching decisions that require verification. If the user explicitly asks to read/check/open/inspect attachments, calling read_attachments_cdn is mandatory. Skipping this tool call before answering is a failure to follow these search result guidelines.",
+        exemptions: "You do not need to call read_attachments_cdn if the user only wants to list, fetch, find message links with attachments, or return attachment links/files from the latest messages or from a specific time range, and does not ask for analysis, verification, extracted content, summaries, visual/content matching, or other information from inside the files."
+      },
       subsequent_searches: "If you're planning to iterate more from initial search results, it's recommended to use before or after parameters with associated previous snowflake of its messages from initial search results to ensure consistency and results don't get mixed up with latest messages."
     },
     results: searchResults
