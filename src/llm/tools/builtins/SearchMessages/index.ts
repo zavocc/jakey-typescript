@@ -90,13 +90,13 @@ export async function search_messages(discord_interaction: Message, params: { se
 
   // Before and after are mutually exclusive
   if (params.before && params.after) {
-    return "Before and after parameters are mutually exclusive. Please provide only one of them."
+    throw new Error("Before and after parameters are mutually exclusive. Please provide only one of them.");
   }
 
   // Detect if we're in a server
   const isGuild = discord_interaction.guildId !== null;
   if (!isGuild) {
-    return "This command can only be used in a server.";
+    throw new Error("This command can only be used in a server.");
   }
 
   const searchResults: Array<ResultsShape> = [];
@@ -115,7 +115,7 @@ export async function search_messages(discord_interaction: Message, params: { se
     const queries = params.queries;
 
     if (!queries?.length) {
-       return "No queries specified. Please provide at least one query to search for.";
+       throw new Error("No queries specified. Please provide at least one query to search for.");
      }
 
     // Perform iterative filtering from messages
@@ -172,6 +172,11 @@ export async function search_messages(discord_interaction: Message, params: { se
     });
   }
 
+  // Throw if there's empty results
+  if (searchResults.length === 0) {
+    throw new Error("No results found.");
+  }
+
   // Count no of URLs
   const urlCount = searchResults.filter(result => result.jump_url).length;
 
@@ -225,7 +230,7 @@ export async function read_attachments_cdn(discord_interaction: Message, params:
   // Detect if we're in a server
   const isGuild = discord_interaction.guildId !== null;
   if (!isGuild) {
-    return "This command can only be used in a server.";
+    throw new Error("This command can only be used in a server.");
   }
 
   // Upload file
@@ -250,7 +255,7 @@ export async function read_attachments_cdn(discord_interaction: Message, params:
   await initialSend.edit(`✅ Read **${params.filename}** from message ${params.assoc_message_url}`);
 
   if (!response.candidates?.length) {
-    return "No response found";
+    throw new Error("No response found");
   }
 
   const candidate = response.candidates[0];
