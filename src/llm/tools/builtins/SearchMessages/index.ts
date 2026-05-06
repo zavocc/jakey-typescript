@@ -88,11 +88,6 @@ export const MULTIMODAL_READ_DISCORD_CDN_TOOL_SCHEMA =
 export async function search_messages(discord_interaction: Message, params: { searchTypes: "QUERIES" | "ATTACHMENTS" | "FIRST_FIFTY_MESSAGES", queries?: Array<string>, before?: string, after?: string}): Promise<string> {
   const messageChannel: SendableChannels = getSendableChannel(discord_interaction);
 
-  // Before and after are mutually exclusive
-  if (params.before && params.after) {
-    throw new Error("Before and after parameters are mutually exclusive. Please provide only one of them.");
-  }
-
   // Detect if we're in a server
   const isGuild = discord_interaction.guildId !== null;
   if (!isGuild) {
@@ -214,7 +209,7 @@ export async function search_messages(discord_interaction: Message, params: { se
   // Add guidelines
   const finalToolResult = {
     guidelines: {
-      pagination: "Use the message_snowflake only if necessary to find messages before or after a specific message.",
+      pagination: "Use the message_snowflake or based on user's specified date only if necessary to find messages before or after a specific message if initial search results are not sufficient.",
       file_attachments: "If any search result contains attachments that may be relevant to the user's request, you MUST call read_attachments_cdn for the relevant attachment(s) before answering. Do this even if the answer appears obvious from the message text, filename, attachment name, or surrounding context. Filenames and textual metadata can be incomplete or misleading, so never rely on them alone. If the user explicitly asks to read/check/open/inspect attachments, calling read_attachments_cdn is mandatory. Skipping this tool call before answering is a failure to follow these search result guidelines. In addition, if there is a file attachment but with less obvious hints like randomly named filenames and/or lack of context based on messages surrounds context with it, consider reading it before paginating.",
       subsequent_searches: "If you're planning to iterate more from initial search results, it's recommended to use before or after parameters with associated previous snowflake of its messages from initial search results to ensure consistency and results don't get mixed up with latest messages."
     },
