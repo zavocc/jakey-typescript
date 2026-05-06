@@ -45,11 +45,11 @@ export const SEARCH_MESSAGE_TOOL_SCHEMA =
       },
       before: {
         type: "string",
-        description: "Search for messages before the message with its associated snowflake. Use this to paginate results if initial results from latest pull doesn't match the criteria.",
+        description: "Search for messages before an existing message snowflake ID. Use a message_snowflake from prior search results, a snowflake ID provided by the user, calculate or imply the Discord snowflake from the user's specified date or time.",
       },
       after: {
         type: "string",
-        description: "Search for messages after the message with its associated snowflake. Use this to paginate results if initial results from latest pull doesn't match the criteria.",
+        description: "Search for messages after an existing message snowflake ID. Use a message_snowflake from prior search results, a snowflake ID provided by the user, calculate or imply the Discord snowflake from the user's specified date or time.",
       }
     },
     required: ["searchTypes"],
