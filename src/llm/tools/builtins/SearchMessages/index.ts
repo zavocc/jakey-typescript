@@ -47,6 +47,10 @@ export const SEARCH_MESSAGE_TOOL_SCHEMA =
         type: "string",
         description: "Search for messages before an existing message snowflake ID. Use a message_snowflake from prior search results, a snowflake ID provided by the user, calculate or imply the Discord snowflake from the user's specified date or time.",
       },
+      around: {
+        type: "string",
+        description: "Search for messages around from an existing message snowflake ID. Use a message_snowflake from prior search results, a snowflake ID provided by the user, calculate or imply the Discord snowflake from the user's specified date or time.",
+      },
       after: {
         type: "string",
         description: "Search for messages after an existing message snowflake ID. Use a message_snowflake from prior search results, a snowflake ID provided by the user, calculate or imply the Discord snowflake from the user's specified date or time.",
@@ -85,7 +89,7 @@ export const MULTIMODAL_READ_DISCORD_CDN_TOOL_SCHEMA =
   }
 }
 
-export async function search_messages(discord_interaction: Message, params: { searchTypes: "QUERIES" | "ATTACHMENTS" | "FIRST_FIFTY_MESSAGES", queries?: Array<string>, before?: string, after?: string}): Promise<string> {
+export async function search_messages(discord_interaction: Message, params: { searchTypes: "QUERIES" | "ATTACHMENTS" | "FIRST_FIFTY_MESSAGES", queries?: Array<string>, before?: string, around?: string, after?: string}): Promise<string> {
   const messageChannel: SendableChannels = getSendableChannel(discord_interaction);
 
   // Detect if we're in a server
@@ -100,7 +104,7 @@ export async function search_messages(discord_interaction: Message, params: { se
   const messagesLimit = 50;
 
   // Search through messages in the current channel
-  const messagesResultList = await discord_interaction.channel.messages.fetch({ limit: messagesLimit, before: params.before, after: params.after, cache: false });
+  const messagesResultList = await discord_interaction.channel.messages.fetch({ limit: messagesLimit, before: params.before, around: params.around, after: params.after, cache: false });
   childLogger.debug({ tool: 'search_messages', mode: params.searchTypes, queries: params.queries, user_snowflake: discord_interaction.author.id }, "Searched for messages")
   if (params.searchTypes === "QUERIES") {
     // Check if params.queries is set  and has at least one query
