@@ -1,8 +1,10 @@
 // pulls preferences and other data from the database
+import logger from "./pinoLogger.js";
 import { z } from "zod";
 import { PreferencesSchema } from "../types/schemas.js";
 import { getDB } from "./services/mongodb/index.js";
 
+const childLogger = logger.child({ module: "lib.preferencesDBLoader" });
 const MONGODB_COLLECTION_NAME = "discord_user_preferences";
 type Preferences = z.infer<typeof PreferencesSchema>;
 type PreferenceKey = keyof Preferences;
@@ -30,6 +32,7 @@ async function loadPreferences<K extends PreferenceKey>(userId: string, prefName
     return null;
   }
 
+  childLogger.debug({prefName: prefName, user_snowflake: userId}, "Successfully loaded preferences");
   return (result[prefName] ?? null) as Preferences[K] | null;
 }
 
@@ -61,12 +64,15 @@ async function savePreferences<K extends PreferenceKey>(userId: string, prefName
       { upsert: true }
     );
   }
+
+  childLogger.debug({prefName: prefName, prefValue: data, user_snowflake: userId}, "Successfully saved preferences");
 }
 
 // reset user preferences
 async function clearUserPreferences(userId: string): Promise<void> {
   const collection = await getPrefsCollection();
   await collection.deleteOne({ user_id: userId });
+  childLogger.debug({user_snowflake: userId}, "Successfully cleared user preferences");
 }
 
 export { loadPreferences, savePreferences, clearUserPreferences };
