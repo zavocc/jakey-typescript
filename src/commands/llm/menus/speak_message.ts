@@ -20,7 +20,7 @@ export default {
     await interaction.deferReply({ flags: MessageFlags.Ephemeral });
 
     // Check if targetMessage has no text
-    if (!targetMessage.content) {
+    if (!targetMessage.content || targetMessage.content.length === 0) {
       await interaction.editReply({
         content: "This message has no text content to speak.",
       });
