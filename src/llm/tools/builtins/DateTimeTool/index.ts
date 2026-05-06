@@ -17,7 +17,7 @@ export const DATE_TIME_TOOL_SCHEMA =
   }
 }
 
-export async function have_a_banana(discord_interaction: Message, params: { timezone: string }): Promise<string> {
+export async function fetch_date_time(discord_interaction: Message, params: { timezone: string }): Promise<string> {
   // Ignore discord_interaction
   if (discord_interaction) {
     //ignored
