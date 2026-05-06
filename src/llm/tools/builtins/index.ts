@@ -1,11 +1,12 @@
 import logger from "../../../lib/pinoLogger.js";
 import { readdir } from "node:fs/promises";
-import { Message } from "discord.js";
 import { fileURLToPath } from "node:url";
+import type { Message } from "discord.js";
+
 
 const childLogger = logger.child({ module: "llm.tools.builtins" })
 
-type ToolHandler = (discord_interaction: Message, params: Record<string, unknown>) => Promise<string>;
+type ToolHandler = (discord_interaction: Message | undefined, params: Record<string, unknown>) => Promise<string>;
 
 type FunctionToolSchema = {
   type: "function";

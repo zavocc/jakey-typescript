@@ -1,4 +1,4 @@
-import { Message } from "discord.js";
+import type { Message } from "discord.js";
 
 export const DATE_TIME_TOOL_SCHEMA =
 {
@@ -17,11 +17,7 @@ export const DATE_TIME_TOOL_SCHEMA =
   }
 }
 
-export async function fetch_date_time(discord_interaction: Message, params: { timezone: string }): Promise<string> {
-  // Ignore discord_interaction
-  if (discord_interaction) {
-    //ignored
-  }
-
+export async function fetch_date_time(discord_interaction: Message | undefined, params: { timezone: string }): Promise<string> {
+  void discord_interaction;
   return new Date().toLocaleString("en-US", { timeZone: params.timezone });
 }

@@ -17,7 +17,12 @@ export const REACT_MESSAGE_TOOL_SCHEMA =
   }
 }
 
-export async function react_message(discord_interaction: Message, params: { emoji: string }): Promise<string> {
+export async function react_message(discord_interaction: Message | undefined, params: { emoji: string }): Promise<string> {
+  // We're only checking discord interaction but doesn't need to narrow down as SendableChannel type using getSendableChannel function since we're not sending anything
+  if (!discord_interaction) {
+    throw new Error("Discord interaction is required for this tool.");
+  }
+
   // React with the specified emoji
   await discord_interaction.react(params.emoji);
   return "Message reacted with emoji.";
