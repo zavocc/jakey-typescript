@@ -1,11 +1,13 @@
 import logger from "../../lib/pinoLogger.js";
 import { getModelProps } from "./modelsSelection.js";
-import type { ModelProps } from "../../types/schemas.js";
-import type { Message, SendableChannels } from 'discord.js';
 import { JAKEY_SYSTEM_PROMPT } from "../../data/sysprompts.js";
 import { text_chat_completion } from "../generateContentChat.js";
 import { loadPreferences, savePreferences } from "../../lib/preferencesDBLoader.js";
 import { fileTypeFromBuffer } from 'file-type';
+import type { ModelProps } from "../../types/schemas.js";
+import type { Message, SendableChannels } from 'discord.js';
+import type { Interactions } from "@google/genai";
+
 
 // Tool loader
 import { fetchToolPack } from "../tools/utils.js";
@@ -94,72 +96,75 @@ export async function chatToLLM(
   while (!toolHasDone) {
     // Collect tool results including those that ran in parallel before sending
     let hasToolCalls = false;
-    const toolResults = [];
+    const toolResults: Interactions.FunctionResultStep[] = [];
 
-    // Process ALL outputs from the response first
-    for (const output of response.modelOutputs) {
+    // Process ALL steps from the response first
+    for (const steps of response.modelSteps) {
       // search results
-      if (output.type === 'google_search_result' && output.result) {
+      if (steps.type === 'google_search_result' && steps.result) {
         // Iterate and join queries with comma
         await messageChannel.send(`-# > Used: Google Search`);
       }
 
       // URL context
-      if (output.type === 'url_context_result' && output.result) {
-        await messageChannel.send(`-# > Used: Read ${output.result.length} URLs`);
+      if (steps.type === 'url_context_result' && steps.result) {
+        await messageChannel.send(`-# > Used: Read ${steps.result.length} URLs`);
       }
 
       // Code Execution
-      if (output.type === 'code_execution_result' && output.result) {
-        await sendChunkedMessage(messageChannel, output.result);
+      if (steps.type === 'code_execution_result' && steps.result) {
+        await sendChunkedMessage(messageChannel, steps.result);
       }
 
       // MCP Server remote
-      if (output.type === 'mcp_server_tool_call') {
-        await messageChannel.send(`-# > Used: ${output.name} (REMOTE)`);
+      if (steps.type === 'mcp_server_tool_call') {
+        await messageChannel.send(`-# > Used: ${steps.name} (REMOTE)`);
       }
 
-      // text
-      if (output.type === 'text') {
-        await sendChunkedMessage(messageChannel, output.text);
+      // model outputs
+      if (steps.type === 'model_output' && steps.content) {
+        for (const content of steps.content) {
+          // text
+          if (content.type === 'text' && content.text && content.text.trim() !== '') {
+            await sendChunkedMessage(messageChannel, content.text);
+
+          // image
+          } else if (content.type === 'image' && content.data) {
+            const bufferParsed = Buffer.from(content.data, 'base64');
+            const mimeType = await fileTypeFromBuffer(bufferParsed);
+
+            await messageChannel.send({
+              files:
+                [
+                  {
+                    attachment: bufferParsed,
+                    name: `image.${mimeType?.ext}`
+                  }
+                ]
+            });
+          }
+        }
       }
-
-      // images - base64
-      if (output.type === 'image' && output.data) {
-        const bufferParsed = Buffer.from(output.data, 'base64');
-        const mimeType = await fileTypeFromBuffer(bufferParsed);
-
-        await messageChannel.send({
-          files:
-            [
-              {
-                attachment: bufferParsed,
-                name: `image.${mimeType?.ext}`
-              }
-            ]
-        });
-      }
-
 
       // tool calls
-      if (output.type === 'function_call') {
+      if (steps.type === 'function_call') {
         hasToolCalls = true;
-        let toolResult;
-        const toolName = output.name;
+        let toolResult: string;
+        const toolName = steps.name;
         const toolFunctions = loadedToolPack.functions[toolName as keyof typeof loadedToolPack.functions];
 
         // Log tools used
-        logger.info({ tool_invoked: toolName, tool_id: output.id, user_snowflake: discord_interaction.author.id }, "User LLM called tool")
-        logger.debug({ tool_name: output.name, tool_arguments: output.arguments, tool_id: output.id, user_snowflake: discord_interaction.author.id }, "Arg tool")
+        logger.info({ tool_invoked: toolName, tool_id: steps.id, user_snowflake: discord_interaction.author.id }, "User LLM called tool")
+        logger.debug({ tool_name: steps.name, tool_arguments: steps.arguments, tool_id: steps.id, user_snowflake: discord_interaction.author.id }, "Arg tool")
 
         try {
           // Call tools if it doesn't reach the max limit, if it does, we output the error instead
           if (toolCallTurnCount >= toolCallHardLimit) {
             toolResult = `{"error": "Reached tool call hard limit. Please try again later."}`;
-            logger.error({ 'tool_name': output.name, 'tool_id': output.id, 'user_snowflake': discord_interaction.author.id }, "Max tool calls limit reached")
+            logger.error({ 'tool_name': steps.name, 'tool_id': steps.id, 'user_snowflake': discord_interaction.author.id }, "Max tool calls limit reached")
           } else {
-            toolResult = await toolFunctions(discord_interaction, output.arguments ?? {});
-            logger.debug({ tool_result: toolResult, tool_name: output.name, tool_id: output.id, user_snowflake: discord_interaction.author.id }, "Tool result")
+            toolResult = await toolFunctions(discord_interaction, steps.arguments ?? {});
+            logger.debug({ tool_result: toolResult, tool_name: steps.name, tool_id: steps.id, user_snowflake: discord_interaction.author.id }, "Tool result")
           }
         } catch (error) {
           const errorMessage = error instanceof Error ? error.message : String(error);
@@ -175,9 +180,9 @@ export async function chatToLLM(
         }
 
         toolResults.push({
-          type: 'function_result' as const,
-          name: output.name,
-          call_id: output.id,
+          type: 'function_result',
+          name: steps.name,
+          call_id: steps.id,
           result: `{"api_result": ${toolResult}}`
         });
       }
@@ -187,7 +192,7 @@ export async function chatToLLM(
     // This will continue to next loop so it can output modalities but will also check again if there's a tool call issued so toolHasDone can be set to stop the loop
     if (hasToolCalls) {
       // Send all tool results for this interaction together. Each call_id belongs
-      // to the interaction that produced the current response.modelOutputs.
+      // to the interaction that produced the current response.modelSteps.
       response = await text_chat_completion(
         modelProps.model_id,
         toolResults,

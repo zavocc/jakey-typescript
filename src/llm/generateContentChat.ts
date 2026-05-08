@@ -7,7 +7,7 @@ const childLogger = logger.child({ module: 'llm.generateContentChat' });
 
 export async function text_chat_completion(
   model: string,
-  prompt: string | Interactions.Content[],
+  prompt: string | Interactions.Content[] | Interactions.FunctionResultStep[],
   optional_params?: {
     interactions_context_id?: string,
     system_prompt?: string,
@@ -19,14 +19,14 @@ export async function text_chat_completion(
     additional_properties?: Record<string, unknown>,
   },
 ): Promise<{
-  modelOutputs: Interactions.Content[],
+  modelSteps: Interactions.Step[],
   model_used: string,
   interactionID: string
 }> {
   // Parse optional params
   const { interactions_context_id, system_prompt, attachment_urls, additional_properties } = optional_params ?? {};
 
-  let constructedContent: Interactions.Content[];
+  let constructedContent;
 
   // Construct a prompt
   if (typeof prompt === "string") {
@@ -98,7 +98,7 @@ export async function text_chat_completion(
   })
 
   // We cannot receive null output so we throw if it is null
-  if (!interactionsResult.outputs) {
+  if (!interactionsResult.steps) {
     throw new Error('No output received from the model.');
   }
 
@@ -111,12 +111,12 @@ export async function text_chat_completion(
     totalCachedtokenCnt: interactionsResult.usage.total_cached_tokens,
     totalTooltokenCnt: interactionsResult.usage.total_tool_use_tokens,
     totalTokens: interactionsResult.usage.total_tokens,
-    responsesOutputs: interactionsResult.outputs
+    responsesSteps: interactionsResult.steps
   }, "Generated content chat");
 
 
   return {
-    modelOutputs: interactionsResult.outputs,
+    modelSteps: interactionsResult.steps,
     model_used: interactionsResult.model ?? "Not specified",
     interactionID: interactionsResult.id
   };
