@@ -91,7 +91,7 @@ export async function chatToLLM(
   interactionIDStored = response.interactionID;
 
   // Handle responses and agentic loop inside of this toolHasDone loop, and we display each response modalities one by one
-  const toolCallHardLimit = parseInt(process.env.TOOL_CALL_TURNS_HARD_LIMIT ?? '20');
+  const toolCallHardLimit = parseInt(process.env.TOOL_CALL_TURNS_HARD_LIMIT ?? '10');
   let toolCallTurnCount = 0;
   while (!toolHasDone) {
     // Collect tool results including those that ran in parallel before sending

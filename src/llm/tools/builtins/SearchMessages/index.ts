@@ -49,11 +49,11 @@ export const SEARCH_MESSAGE_TOOL_SCHEMA =
       },
       around: {
         type: "string",
-        description: "Search for messages before the message with its associated snowflake ID. Use an existing given snowflake ID, calculate or imply the Discord snowflake from the user's specified date or time. For best results, use this with `before` or `after` parameters",
+        description: "Search for messages around or during the specified date or time using its associated message snowflake ID. Prefer this parameter for user requests that mention a specific time, date, or timeframe, including during-queries. Use an existing given snowflake ID, calculate or imply the Discord snowflake from the user's specified date or time. Use `before` and `after` only when you need additional pagination or a narrower bounded range.",
       },
       after: {
         type: "string",
-        description: "Search for messages before the message with its associated snowflake ID. Use an existing given snowflake ID, calculate or imply the Discord snowflake from the user's specified date or time.",
+        description: "Search for messages after the message with its associated snowflake ID. Use an existing given snowflake ID, calculate or imply the Discord snowflake from the user's specified date or time.",
       },
       ack_magic_string: {
         type: "string",
@@ -218,15 +218,14 @@ export async function search_messages(discord_interaction: Message, params: { se
       guidelines: {
         pagination: {
           guidelines: "Use before, during, or after parameters to perform subsequent searches if the initial results are not found, these parameters can be used in conjunction to each other. For instance, when using `around` parameter it is recommended to also specify `before` and `after` parameters to search within that range only",
-          subsequent_search: "If you want to perform subsequent search after performing initial search, if the user wants to search past messages--you MUST always specify `before` parameter using the oldest message within the first batch of messages so the new messages arriving won't interfere with search operation"
+          subsequent_search: "If you want to perform subsequent search after performing initial search, if the user wants to search past messages--you MUST always specify `before` parameter using the oldest message within the first batch of messages so the new messages arriving won't interfere with search operation",
         },
         file_attachments: {
           rules: "If the user's request requires information from files attached to messages, or requires verifying which file matches exact constraints, visual/content descriptions, partially recalled details, or what the user is picturing, you MUST call read_attachments_cdn for the relevant attachment(s) before answering. Do this even if the answer appears obvious from the message text, filename, attachment name, or surrounding context. Filenames and textual metadata can be incomplete or misleading, so never rely on them alone for file-content questions or file-matching decisions that require verification. If the user explicitly asks to read/check/open/inspect attachments, calling read_attachments_cdn is mandatory. Skipping this tool call before answering is a failure to follow these search result guidelines.",
           exemptions: "You do not need to call read_attachments_cdn if the user only wants to list, fetch, find message links with attachments, or return attachment links/files from the latest messages or from a specific time range, and does not ask for analysis, verification, extracted content, summaries, visual/content matching, or other information from inside the files."
         },
-        optimal_results: "When iteratively finding messages, it's recommended to call this tool 5-10 times to avoid looping. 10 failed attempts usually mean information is not searchable."
       },
-      ack: "To acknowledge these guidelines, use the parameter 'YES I HAVE ACKNOWLEDGED' in ack_magic_string in next subequent search or next search_messages tool call   so you won't see these guidelines again.",
+      ack: "To acknowledge these guidelines including the rules on how to deal with searches and agree you will also adhere to the constraints, use the parameter 'YES I HAVE ACKNOWLEDGED' in ack_magic_string in next subequent search or next search_messages tool call so you won't see these guidelines again.",
       results: searchResults
     });
   } else {
