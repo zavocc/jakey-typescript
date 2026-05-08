@@ -154,8 +154,8 @@ export async function chatToLLM(
         const toolFunctions = loadedToolPack.functions[toolName as keyof typeof loadedToolPack.functions];
 
         // Log tools used
-        logger.info({ tool_invoked: toolName, tool_id: steps.id, user_snowflake: discord_interaction.author.id }, "User LLM called tool")
-        logger.debug({ tool_name: steps.name, tool_arguments: steps.arguments, tool_id: steps.id, user_snowflake: discord_interaction.author.id }, "Arg tool")
+        childLogger.info({ tool_invoked: toolName, tool_id: steps.id, user_snowflake: discord_interaction.author.id }, "User LLM called tool")
+        childLogger.debug({ tool_name: steps.name, tool_arguments: steps.arguments, tool_id: steps.id, user_snowflake: discord_interaction.author.id }, "Arg tool")
 
         try {
           // Call tools if it doesn't reach the max limit, if it does, we output the error instead
