@@ -49,7 +49,7 @@ export const SEARCH_MESSAGE_TOOL_SCHEMA =
       },
       around: {
         type: "string",
-        description: "Search for messages before the message with its associated snowflake ID. Use an existing given snowflake ID, calculate or imply the Discord snowflake from the user's specified date or time. For best results, use this in conjunction with before or after parameters",
+        description: "Search for messages before the message with its associated snowflake ID. Use an existing given snowflake ID, calculate or imply the Discord snowflake from the user's specified date or time. For best results, use this with `before` or `after` parameters",
       },
       after: {
         type: "string",
@@ -217,7 +217,7 @@ export async function search_messages(discord_interaction: Message, params: { se
     return JSON.stringify({
       guidelines: {
         pagination: {
-          guidelines: "Use before, during, or after parameters to perform subsequent searches if the initial results are not found, these parameters can be used in conjunction to each other. For instance, when using `around` parameter it is recommended to specify before and after parameters to search within that range only",
+          guidelines: "Use before, during, or after parameters to perform subsequent searches if the initial results are not found, these parameters can be used in conjunction to each other. For instance, when using `around` parameter it is recommended to also specify `before` and `after` parameters to search within that range only",
           subsequent_search: "If you want to perform subsequent search after performing initial search, if the user wants to search past messages--you MUST always specify `before` parameter using the oldest message within the first batch of messages so the new messages arriving won't interfere with search operation"
         },
         file_attachments: {
