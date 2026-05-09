@@ -6,7 +6,7 @@ import type { Message } from "discord.js";
 
 const childLogger = logger.child({ module: "llm.tools.builtins" })
 
-type ToolHandler = (discord_interaction: Message | undefined, params: Record<string, unknown>) => Promise<string>;
+type ToolHandler = (discord_interaction: Message | undefined, params: Record<string, unknown>) => Promise<unknown>;
 
 type FunctionToolSchema = {
   type: "function";

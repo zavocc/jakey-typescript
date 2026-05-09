@@ -149,12 +149,11 @@ export async function chatToLLM(
       // tool calls
       if (steps.type === 'function_call') {
         hasToolCalls = true;
-        let toolResult: string;
-        const toolName = steps.name;
-        const toolFunctions = loadedToolPack.functions[toolName as keyof typeof loadedToolPack.functions];
+        let toolResult;
+        const toolFunctions = loadedToolPack.functions[steps.name as keyof typeof loadedToolPack.functions];
 
         // Log tools used
-        childLogger.info({ tool_invoked: toolName, tool_id: steps.id, user_snowflake: discord_interaction.author.id }, "User LLM called tool")
+        childLogger.info({ tool_invoked: steps.name, tool_id: steps.id, user_snowflake: discord_interaction.author.id }, "User LLM called tool")
         childLogger.debug({ tool_name: steps.name, tool_arguments: steps.arguments, tool_id: steps.id, user_snowflake: discord_interaction.author.id }, "Arg tool")
 
         try {
@@ -164,16 +163,34 @@ export async function chatToLLM(
             logger.error({ 'tool_name': steps.name, 'tool_id': steps.id, 'user_snowflake': discord_interaction.author.id }, "Max tool calls limit reached")
           } else {
             toolResult = await toolFunctions(discord_interaction, steps.arguments ?? {});
-            logger.debug({ tool_result: toolResult, tool_name: steps.name, tool_id: steps.id, user_snowflake: discord_interaction.author.id }, "Tool result")
+
+            // If the function returns void or undefined, we tell the model it doesn't return anything
+            if (toolResult === undefined || toolResult === null) {
+              childLogger.info({ tool_name: steps.name, tool_id: steps.id }, "The tool did not return a result")
+              toolResult = JSON.stringify(`The tool ${steps.name} did not return a result`);
+            }
+
+            if (typeof toolResult === "bigint") {
+              childLogger.info({ tool_name: steps.name, tool_id: steps.id }, "Possible bigint, safely converting to string...")
+              toolResult = JSON.stringify(`${toolResult}`);
+            }
+
+            // If the tool result is not a string, convert it to one, to ensure we can put in the context
+            if (typeof toolResult !== 'string') {
+              childLogger.info({ tool_name: steps.name, tool_id: steps.id }, "The result is not a string, converting to string...")
+              toolResult = JSON.stringify(toolResult)
+            }
+
+            logger.debug({ validated_tool_result: toolResult, tool_name: steps.name, tool_id: steps.id, user_snowflake: discord_interaction.author.id }, "Tool result")
           }
         } catch (error) {
           const errorMessage = error instanceof Error ? error.message : String(error);
           childLogger.error({
-            tool_name: toolName,
+            tool_name: steps.name,
             tool_error: errorMessage,
             user_snowflake: discord_interaction.author.id,
           }, "Error calling tool");
-          toolResult = `{"error": "Failed to execute tool ${toolName}, reason: ${errorMessage}"}`;
+          toolResult = `{"error": "Failed to execute tool ${steps.name}", "reason": "${errorMessage}"}`;
         } finally {
           // Increment tool call turn counter
           toolCallTurnCount += 1;
