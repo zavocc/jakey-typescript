@@ -159,7 +159,7 @@ export async function chatToLLM(
         try {
           // Call tools if it doesn't reach the max limit, if it does, we output the error instead
           if (toolCallTurnCount >= toolCallHardLimit) {
-            toolResult = `{"error": "Reached tool call hard limit. Please try again later."}`;
+            toolResult = { error: "Reached tool call hard limit. Please try again later." };
             logger.error({ 'tool_name': steps.name, 'tool_id': steps.id, 'user_snowflake': discord_interaction.author.id }, "Max tool calls limit reached")
           } else {
             toolResult = await toolFunctions(discord_interaction, steps.arguments ?? {});
@@ -167,21 +167,16 @@ export async function chatToLLM(
             // If the function returns void or undefined, we tell the model it doesn't return anything
             if (toolResult === undefined || toolResult === null) {
               childLogger.info({ tool_name: steps.name, tool_id: steps.id }, "The tool did not return a result")
-              toolResult = JSON.stringify(`The tool ${steps.name} did not return a result`);
+              toolResult = `The tool ${steps.name} did not return a result`;
             }
 
+            // Check if it directly returns bigInt, NOTE: any nested objects that has bigInt may fail and this check may not cover it
             if (typeof toolResult === "bigint") {
-              childLogger.info({ tool_name: steps.name, tool_id: steps.id }, "Possible bigint, safely converting to string...")
-              toolResult = JSON.stringify(`${toolResult}`);
+              childLogger.info({ tool_name: steps.name, tool_id: steps.id }, "Possible direct bigint returned, safely converting to string...")
+              toolResult = `${toolResult}`;
             }
 
-            // If the tool result is not a string, convert it to one, to ensure we can put in the context
-            if (typeof toolResult !== 'string') {
-              childLogger.info({ tool_name: steps.name, tool_id: steps.id }, "The result is not a string, converting to string...")
-              toolResult = JSON.stringify(toolResult)
-            }
-
-            logger.debug({ validated_tool_result: toolResult, tool_name: steps.name, tool_id: steps.id, user_snowflake: discord_interaction.author.id }, "Tool result")
+            logger.debug({ tool_result: toolResult, tool_name: steps.name, tool_id: steps.id, user_snowflake: discord_interaction.author.id }, "Tool result")
           }
         } catch (error) {
           const errorMessage = error instanceof Error ? error.message : String(error);
@@ -190,7 +185,10 @@ export async function chatToLLM(
             tool_error: errorMessage,
             user_snowflake: discord_interaction.author.id,
           }, "Error calling tool");
-          toolResult = `{"error": "Failed to execute tool ${steps.name}", "reason": "${errorMessage}"}`;
+          toolResult = {
+            error: `Failed to execute tool ${steps.name}`,
+            reason: errorMessage,
+          };
         } finally {
           // Increment tool call turn counter
           toolCallTurnCount += 1;
@@ -200,7 +198,7 @@ export async function chatToLLM(
           type: 'function_result',
           name: steps.name,
           call_id: steps.id,
-          result: `{"api_result": ${toolResult}}`
+          result: JSON.stringify({ api_result: toolResult })
         });
       }
     }
