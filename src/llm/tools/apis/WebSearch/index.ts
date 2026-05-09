@@ -1,10 +1,10 @@
 import logger from "../../../../lib/pinoLogger.js";
 import { getSendableChannel } from "../../functions.js";
-import type { Message, SendableChannels } from "discord.js";
+import { EmbedBuilder, type Message, type SendableChannels } from "discord.js";
 
 const childLogger = logger.child({ module: "llm.tools.apis.WebSearch" });
 
-export async function web_search(discord_interaction: Message | undefined, params: { query: string, n_results?: number }): Promise<object> {
+export async function web_search(discord_interaction: Message | undefined, params: { query: string, n_results?: number, pull_images?: boolean }): Promise<object> {
   const messageChannel: SendableChannels = getSendableChannel(discord_interaction);
 
   // if site: contains site:http:// or site:https://, exclude the protocol but without stripping the site: prefix
@@ -32,7 +32,9 @@ export async function web_search(discord_interaction: Message | undefined, param
       },
       body: JSON.stringify({
         query: params.query,
-        search_depth: "advanced"
+        search_depth: "basic",
+        include_images: params.pull_images ?? false,
+        include_image_descriptions: params.pull_images ?? false
       })
     });
   } catch (error) {
@@ -51,6 +53,29 @@ export async function web_search(discord_interaction: Message | undefined, param
 
   return {
     scores: "Utilize the score field to rank the relevance of the search results. A higher score indicates a more relevant result to the query. Use this score to prioritize which sources to reference in your response.",
+    images: rawData.images ?? [],
     results: rawData.results
   };
+}
+
+export async function send_web_image(discord_interaction: Message | undefined, params: { images: Array<{ url: string, description: string }> }): Promise<string> {
+  const messageChannel: SendableChannels = getSendableChannel(discord_interaction);
+
+  const imageEmbeds = []
+  let imageCount = 0
+
+  // build upto 10 image embeds
+  for (const image of params.images) {
+    if (imageCount >= 10) break;
+    const Embed =new EmbedBuilder()
+      .setTitle(image.description)
+      .setDescription(image.url)
+      .setImage(image.url);
+    imageEmbeds.push(Embed);
+    imageCount++;
+  }
+
+  await messageChannel.send({ embeds: imageEmbeds });
+
+  return "Images sent"
 }
