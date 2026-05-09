@@ -150,48 +150,69 @@ export async function chatToLLM(
       if (steps.type === 'function_call') {
         hasToolCalls = true;
         let toolResult;
-        const toolFunctions = loadedToolPack.functions[steps.name as keyof typeof loadedToolPack.functions];
+        let schemaHasFound = false;
 
-        // Log tools used
-        childLogger.info({ tool_invoked: steps.name, tool_id: steps.id, user_snowflake: discord_interaction.author.id }, "User LLM called tool")
-        childLogger.debug({ tool_name: steps.name, tool_arguments: steps.arguments, tool_id: steps.id, user_snowflake: discord_interaction.author.id }, "Arg tool")
-
-        try {
-          // Call tools if it doesn't reach the max limit, if it does, we output the error instead
-          if (toolCallTurnCount >= toolCallHardLimit) {
-            toolResult = { error: "Reached tool call hard limit. Please try again later." };
-            logger.error({ 'tool_name': steps.name, 'tool_id': steps.id, 'user_snowflake': discord_interaction.author.id }, "Max tool calls limit reached")
-          } else {
-            toolResult = await toolFunctions(discord_interaction, steps.arguments ?? {});
-
-            // If the function returns void or undefined, we tell the model it doesn't return anything
-            if (toolResult === undefined || toolResult === null) {
-              childLogger.info({ tool_name: steps.name, tool_id: steps.id }, "The tool did not return a result")
-              toolResult = `The tool ${steps.name} did not return a result`;
-            }
-
-            // Check if it directly returns bigInt, NOTE: any nested objects that has bigInt may fail and this check may not cover it
-            if (typeof toolResult === "bigint") {
-              childLogger.info({ tool_name: steps.name, tool_id: steps.id }, "Possible direct bigint returned, safely converting to string...")
-              toolResult = `${toolResult}`;
-            }
-
-            logger.debug({ tool_result: toolResult, tool_name: steps.name, tool_id: steps.id, user_snowflake: discord_interaction.author.id }, "Tool result")
+        // Check if the tool.name is in the schemas so hallucinated or unauthorized functions cannot be called
+        for (const schema of loadedToolPack.schemas) {
+          if (typeof schema === "object" && schema !== null && "name" in schema && schema.name === steps.name) {
+            schemaHasFound = true;
+            break;
           }
-        } catch (error) {
-          const errorMessage = error instanceof Error ? error.message : String(error);
-          childLogger.error({
-            tool_name: steps.name,
-            tool_error: errorMessage,
-            user_snowflake: discord_interaction.author.id,
-          }, "Error calling tool");
+        }
+
+        // becomes const toolFunction = loadedToolPack.functions[steps.name] as valid with keyof typeof which is string;
+        const toolFunction = loadedToolPack.functions[steps.name as keyof typeof loadedToolPack.functions];
+
+        // Check if steps.name is in loadedToolPack.functions
+        if (schemaHasFound && Object.hasOwn(loadedToolPack.functions, steps.name) && typeof toolFunction === "function") {
+          // Log tools used
+          childLogger.info({ tool_invoked: steps.name, tool_id: steps.id, user_snowflake: discord_interaction.author.id }, "User LLM called tool")
+          childLogger.debug({ tool_name: steps.name, tool_arguments: steps.arguments, tool_id: steps.id, user_snowflake: discord_interaction.author.id }, "Arg tool")
+
+          try {
+            // Call tools if it doesn't reach the max limit, if it does, we output the error instead
+            if (toolCallTurnCount >= toolCallHardLimit) {
+              toolResult = { error: "Reached tool call hard limit. Please try again later." };
+              logger.error({ 'tool_name': steps.name, 'tool_id': steps.id, 'user_snowflake': discord_interaction.author.id }, "Max tool calls limit reached")
+            } else {
+              toolResult = await toolFunction(discord_interaction, steps.arguments ?? {});
+
+              // If the function returns void or undefined, we tell the model it doesn't return anything
+              if (toolResult === undefined || toolResult === null) {
+                childLogger.info({ tool_name: steps.name, tool_id: steps.id }, "The tool did not return a result")
+                toolResult = `The tool ${steps.name} did not return a result`;
+              }
+
+              // Check if it directly returns bigInt, NOTE: any nested objects that has bigInt may fail and this check may not cover it
+              if (typeof toolResult === "bigint") {
+                childLogger.info({ tool_name: steps.name, tool_id: steps.id }, "Possible direct bigint returned, safely converting to string...")
+                toolResult = `${toolResult}`;
+              }
+
+              logger.debug({ tool_result: toolResult, tool_name: steps.name, tool_id: steps.id, user_snowflake: discord_interaction.author.id }, "Tool result")
+            }
+          } catch (error) {
+            const errorMessage = error instanceof Error ? error.message : String(error);
+            childLogger.error({
+              tool_name: steps.name,
+              tool_error: errorMessage,
+              user_snowflake: discord_interaction.author.id,
+            }, "Error calling tool");
+            toolResult = {
+              error: `Failed to execute tool ${steps.name}`,
+              reason: errorMessage,
+            };
+          } finally {
+            // Increment tool call turn counter
+            toolCallTurnCount += 1;
+          }
+        } else {
+          logger.error({ 'tool_name': steps.name, 'schema_found': schemaHasFound, 'user_snowflake': discord_interaction.author.id }, "Attempted to call tool but is not available")
           toolResult = {
-            error: `Failed to execute tool ${steps.name}`,
-            reason: errorMessage,
+            error: schemaHasFound
+              ? `Tool ${steps.name} is not available in the registered functions.`
+              : `Function ${steps.name} is not registered in the available tool schemas.`,
           };
-        } finally {
-          // Increment tool call turn counter
-          toolCallTurnCount += 1;
         }
 
         toolResults.push({
