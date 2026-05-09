@@ -63,7 +63,7 @@ export async function chatToLLM(
   // Load tool schemas and functions
   // If user_choice_tool is null, we will load "Disabled" tool which only has built-in tools
   const toolSelection = await loadPreferences(discord_user_id, "user_choice_tool");
-  const loadedToolPack = await fetchToolPack(toolSelection ?? "Disabled");
+  const loadedToolPack = await fetchToolPack(toolSelection ?? "Disabled"); // This returns both schema list and functions list in a pack
 
   // Tools
   if (modelProps.enable_tools) {
