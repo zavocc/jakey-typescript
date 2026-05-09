@@ -7,6 +7,11 @@ const childLogger = logger.child({ module: "llm.tools.apis.WebSearch" });
 export async function web_search(discord_interaction: Message | undefined, params: { query: string, n_results?: number }): Promise<object> {
   const messageChannel: SendableChannels = getSendableChannel(discord_interaction);
 
+  // if site: contains site:http:// or site:https://, exclude the protocol but without stripping the site: prefix
+  if (params.query.startsWith("site:")) {
+    params.query = params.query.replace(/^site:(http|https):\/\/?/, "site:");
+  }
+
   if (params.n_results && params.n_results > 10) {
     params.n_results = 10;
   } else if (!params.n_results) {

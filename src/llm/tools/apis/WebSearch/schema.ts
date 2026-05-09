@@ -9,7 +9,7 @@ export const TOOL_SCHEMAS = [
       properties: {
         query: {
           type: "string",
-          description: "The search query. To target or precisely browse specific URL and search for relevant information from the URL, use site: operator",
+          description: "The search query.",
         },
         n_results: {
           type: "integer",
