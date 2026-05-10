@@ -1,6 +1,7 @@
 import logger from "../../../lib/pinoLogger.js";
 import { readdir } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
+import { isFunctionToolSchema } from "../functions.js";
 import type { Message } from "discord.js";
 
 
@@ -8,28 +9,10 @@ const childLogger = logger.child({ module: "llm.tools.builtins" })
 
 type ToolHandler = (discord_interaction: Message | undefined, params: Record<string, unknown>) => Promise<unknown>;
 
-type FunctionToolSchema = {
-  type: "function";
-  name: string;
-};
-
 type ToolPack = {
   schemas: unknown[];
   functions: Record<string, ToolHandler>;
 };
-
-function isFunctionToolSchema(value: unknown): value is FunctionToolSchema {
-  return (
-    // check if value is an object and has type and name properties, and type is "function" and name is a string
-    typeof value === "object" &&
-    value !== null && // ensure it's not null
-    // ensure if the key "type" and "name" exist in the object and type is "function" and name is a string
-    "type" in value &&
-    "name" in value &&
-    value.type === "function" &&
-    typeof value.name === "string"
-  );
-}
 
 export async function fetchBuiltInToolPack(): Promise<ToolPack> {
   const builtinsPath = fileURLToPath(new URL("./", import.meta.url));

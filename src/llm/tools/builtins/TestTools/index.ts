@@ -1,6 +1,22 @@
 import { getSendableChannel } from "../../functions.js";
 import { EmbedBuilder, Message, SendableChannels } from "discord.js";
 
+export const INVOKE_NO_FUNCTIONS_TOOL_SCHEMA =
+{
+  type: "function",
+  name: "no_op",
+  description: "Call this function for test",
+  parameters: {
+    type: "object",
+    properties: {
+      thought: {
+        type: "string",
+        description: "Thought",
+      }
+    },
+  }
+}
+
 export const EXCEPTION_INVOKE_TOOL_SCHEMA =
 {
   type: "function",

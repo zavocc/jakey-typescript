@@ -51,5 +51,20 @@ export const TOOL_SCHEMAS = [
       },
       required: ["images"]
     }
+  },
+  // This function doesn't exist, to test function doesn't exist error
+  {
+    type: "function",
+    name: "web_dialer",
+    description: "Call Phone",
+    parameters: {
+      type: "object",
+      properties: {
+        num: {
+          type: "string",
+          description: "Phone number to dial",
+        }
+      },
+    }
   }
 ]

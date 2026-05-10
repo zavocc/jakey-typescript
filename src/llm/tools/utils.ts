@@ -2,6 +2,7 @@ import logger from "../../lib/pinoLogger.js";
 import { readdir } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
 import { fetchBuiltInToolPack } from "./builtins/index.js";
+import { isFunctionToolSchema } from "./functions.js";
 import type { Message } from "discord.js";
 
 const childLogger = logger.child({ module: "llm.tools.utils" });
@@ -55,6 +56,14 @@ export async function fetchToolPack(selectedTool: string): Promise<ToolPack> {
     // Try to import functions — if the tool is schema-only (no index.js), skip
     try {
       const functionS = await import(`./apis/${selectedTool}/index.js`);
+
+      // Check if each function schema tool names have matching function exports in the module functionS
+      for (const _sel_schema of schemaS.TOOL_SCHEMAS) {
+        // Warn if the schema is a function tool schema but there is no matching function export in the module
+        if (isFunctionToolSchema(_sel_schema) && typeof functionS[_sel_schema.name] !== "function") {
+          childLogger.warn({ selected_tool: selectedTool, tool_name: _sel_schema.name }, "Selected tool loaded exports a schema without a matching function.");
+        }
+      }
 
       // Look-up all exported functions only
       const toolapi_functions = Object.fromEntries(
