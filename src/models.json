@@ -29,7 +29,7 @@
             "enable_tools": true,
             "additional_properties": {
                 "generation_config": {
-                    "thinking_level": "medium"
+                    "thinking_level": "minimal"
                 }
             }
         }
