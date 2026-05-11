@@ -21,6 +21,17 @@
                     "thinking_level": "low"
                 }
             }
+        },
+        {
+            "model_id": "gemini-3.1-flash-lite",
+            "model_alias": "Gemini 3.1 Flash (Fast)",
+            "enable_files": true,
+            "enable_tools": true,
+            "additional_properties": {
+                "generation_config": {
+                    "thinking_level": "medium"
+                }
+            }
         }
     ]
 }
