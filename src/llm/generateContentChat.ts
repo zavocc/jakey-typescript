@@ -35,7 +35,7 @@ export async function text_chat_completion(
       const attachmentMessages = await Promise.all(
         attachment_urls.map(async (attachment) => {
           const curURI = await uploadToGoogleFilesAPI(attachment.fileName, attachment.mimeType, attachment.fileURI);
-          const metastring = `File URL: ${attachment.fileURI}, File Name: ${attachment.fileName}, Alt Text: ${attachment.AltText ?? "No alt text"}`
+          const metastring = `File URL: ${attachment.fileURI}, File Name: ${attachment.fileName}, Alt Text: ${attachment.AltText ?? "No alt text"}, Mime Type: ${attachment.mimeType}`
 
           // Detect filetype based on mimeType
           // We return and flatten these arrays to be pushed rather than pushing these parts individually inside this promise to ensure deterministic ordering
