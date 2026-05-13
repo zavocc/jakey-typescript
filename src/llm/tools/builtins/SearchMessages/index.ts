@@ -240,8 +240,16 @@ export async function search_messages(discord_interaction: Message, params: { se
 export async function read_attachments_cdn(discord_interaction: Message, params: { assoc_message_url: string; filename: string, mime_type: string, attachment_url: string }): Promise<string> {
   const messageChannel: SendableChannels = getSendableChannel(discord_interaction);
 
-  // check if the domain ends with discordapp.com/attachments
-  const isDiscordCDN = params.attachment_url.includes("discordapp.com/attachments/");
+  let isDiscordCDN: boolean;
+  try {
+    const attachmentURL = new URL(params.attachment_url);
+    const hostname = attachmentURL.hostname.toLowerCase();
+    isDiscordCDN = attachmentURL.protocol === "https:" &&
+      (hostname === "cdn.discordapp.com" || hostname === "media.discordapp.net") &&
+      attachmentURL.pathname.startsWith("/attachments/");
+  } catch {
+    isDiscordCDN = false;
+  }
   if (!isDiscordCDN) {
     throw new Error("This command can only be used with attachments from the Discord CDN.");
   }
