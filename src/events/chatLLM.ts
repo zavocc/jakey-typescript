@@ -2,6 +2,7 @@ import logger from "../lib/pinoLogger.js";
 import { loadPreferences } from "../lib/preferencesDBLoader.js";
 import { Events, Message } from "discord.js";
 import { chatToLLM } from "../llm/chat/chatAgenticReceiver.js";
+import type { FileMetadata } from "../llm/types.js";
 
 const childLogger = logger.child({ module: "events.chatLLM" });
 
@@ -34,10 +35,11 @@ export default {
       }, 8000);
 
       // Check if the message has attachments and get their URLs
-      const attachmentUrls = message.attachments.map(attachment => ({
+      const attachmentUrls: FileMetadata[] = message.attachments.map(attachment => ({
         fileName: attachment.name,
         mimeType: attachment.contentType ?? "application/octet-stream",
-        fileURI: attachment.url
+        fileURI: attachment.url,
+        AltText: attachment.description
       }));
 
       try {

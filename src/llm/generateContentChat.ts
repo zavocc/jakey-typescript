@@ -1,6 +1,7 @@
 import logger from '../lib/pinoLogger.js';
 import { GoogleClient } from '../lib/genAIClients.js';
 import { uploadToGoogleFilesAPI } from './fileUpload.js';
+import type { FileMetadata } from './types.js';
 import type { Interactions } from '@google/genai';
 
 const childLogger = logger.child({ module: 'llm.generateContentChat' });
@@ -11,11 +12,7 @@ export async function text_chat_completion(
   optional_params?: {
     interactions_context_id?: string,
     system_prompt?: string,
-    attachment_urls?: Array<{
-      fileName: string;
-      mimeType: string;
-      fileURI: string;
-    }>,
+    attachment_urls?: Array<FileMetadata>,
     additional_properties?: Record<string, unknown>,
   },
 ): Promise<{
@@ -38,36 +35,54 @@ export async function text_chat_completion(
       const attachmentMessages = await Promise.all(
         attachment_urls.map(async (attachment) => {
           const curURI = await uploadToGoogleFilesAPI(attachment.fileName, attachment.mimeType, attachment.fileURI);
+          const metastring = `File URL: ${attachment.fileURI}, File Name: ${attachment.fileName}, Alt Text: ${attachment.AltText ?? "No alt text"}`
 
           // Detect filetype based on mimeType
+          // We return and flatten these arrays to be pushed rather than pushing these parts individually inside this promise to ensure deterministic ordering
           if (attachment.mimeType.startsWith("image")) {
-            return {
+            return [{
               type: 'image' as const,
               uri: curURI,
               mime_type: attachment.mimeType as Interactions.ImageContent['mime_type']
-            };
+            },
+            {
+              type: 'text' as const,
+              text: metastring
+            }];
           } else if (attachment.mimeType.startsWith("video")) {
-            return {
+            return [{
               type: 'video' as const,
               uri: curURI,
               mime_type: attachment.mimeType as Interactions.VideoContent['mime_type']
-            };
+            },
+            {
+              type: 'text' as const,
+              text: metastring
+            }];
           } else if (attachment.mimeType.startsWith("audio")) {
-            return {
+            return [{
               type: 'audio' as const,
               uri: curURI,
               mime_type: attachment.mimeType as Interactions.AudioContent['mime_type']
-            };
+            },
+            {
+              type: 'text' as const,
+              text: metastring
+            }];
           } else {
-            return {
+            return [{
               type: 'document' as const,
               uri: curURI,
               mime_type: attachment.mimeType as Interactions.DocumentContent['mime_type']
-            };
+            },
+            {
+              type: 'text' as const,
+              text: metastring
+            }];
           }
         })
       );
-      constructedContent.push(...attachmentMessages);
+      constructedContent.push(...attachmentMessages.flat());
     }
 
     // Append the user's text prompt, if prompt is not empty

@@ -4,10 +4,10 @@ import { JAKEY_SYSTEM_PROMPT } from "../../data/sysprompts.js";
 import { text_chat_completion } from "../generateContentChat.js";
 import { loadPreferences, savePreferences } from "../../lib/preferencesDBLoader.js";
 import { fileTypeFromBuffer } from 'file-type';
+import type { FileMetadata } from "../types.js";
 import type { ModelProps } from "../../types/schemas.js";
 import type { Message, SendableChannels } from 'discord.js';
 import type { Interactions } from "@google/genai";
-
 
 // Tool loader
 import { fetchToolPack } from "../tools/utils.js";
@@ -30,11 +30,7 @@ export async function chatToLLM(
   prompt: string,
   discord_user_id: string,
   discord_interaction: Message,
-  attachment_urls?: Array<{
-    fileName: string;
-    mimeType: string;
-    fileURI: string;
-  }>,
+  attachment_urls?: Array<FileMetadata>,
 ): Promise<void> {
   // Narrow to a channel type that is allowed to send messages
   const messageChannel: SendableChannels | null = discord_interaction.channel?.isSendable() ? discord_interaction.channel : null;
