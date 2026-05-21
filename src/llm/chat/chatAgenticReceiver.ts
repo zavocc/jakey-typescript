@@ -6,6 +6,7 @@ import { loadPreferences, savePreferences } from "../../lib/preferencesDBLoader.
 import { fileTypeFromBuffer } from 'file-type';
 import type { FileMetadata } from "../types.js";
 import type { ModelProps } from "../../types/schemas.js";
+import { citationBtnViewer, querySrp } from "../functions.js";
 import type { Message, SendableChannels } from 'discord.js';
 import type { Interactions } from "@google/genai";
 
@@ -87,6 +88,8 @@ export async function chatToLLM(
   interactionIDStored = response.interactionID;
 
   // Handle responses and agentic loop inside of this toolHasDone loop, and we display each response modalities one by one
+  const uniqueCitations = new Map<string, string>();
+  const searchQueries = new Set<string>();
   const toolCallHardLimit = parseInt(process.env.TOOL_CALL_TURNS_HARD_LIMIT ?? '10');
   let toolCallTurnCount = 0;
   while (!toolHasDone) {
@@ -96,6 +99,18 @@ export async function chatToLLM(
 
     // Process ALL steps from the response first
     for (const steps of response.modelSteps) {
+      // google search call
+      if (steps.type === 'google_search_call') {
+        const searchCall = steps as { arguments?: { queries?: string[] } };
+        if (searchCall.arguments && Array.isArray(searchCall.arguments.queries)) {
+          for (const query of searchCall.arguments.queries) {
+            if (typeof query === 'string' && query.trim() !== '') {
+              searchQueries.add(query.trim());
+            }
+          }
+        }
+      }
+
       // search results
       if (steps.type === 'google_search_result' && steps.result) {
         // Iterate and join queries with comma
@@ -123,6 +138,20 @@ export async function chatToLLM(
           // text
           if (content.type === 'text' && content.text && content.text.trim() !== '') {
             await sendChunkedMessage(messageChannel, content.text);
+
+            // Extract citations
+            const textContent = content as { annotations?: Array<{ type: string; url?: string; title?: string }> };
+            if (textContent.annotations && Array.isArray(textContent.annotations)) {
+              for (const annotation of textContent.annotations) {
+                if (annotation && annotation.type === 'url_citation' && annotation.url) {
+                  const citationUrl = annotation.url;
+                  const citationTitle = annotation.title || '';
+                  if (!uniqueCitations.has(citationUrl) || (citationTitle && !uniqueCitations.get(citationUrl))) {
+                    uniqueCitations.set(citationUrl, citationTitle);
+                  }
+                }
+              }
+            }
 
           // image
           } else if (content.type === 'image' && content.data) {
@@ -252,6 +281,12 @@ export async function chatToLLM(
 
   // Save context back to db
   await savePreferences(discord_user_id, "current_interaction_id", interactionIDStored);
+
+  // Create Discord link buttons for unique citations
+  await citationBtnViewer(uniqueCitations, messageChannel);
+
+  // Create Discord link buttons for search queries
+  await querySrp(searchQueries, messageChannel);
 
   // Send model info
   await messageChannel.send(`-# [DEBUG] Model used: ${response.model_used}`);
