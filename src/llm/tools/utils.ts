@@ -34,15 +34,15 @@ export async function fetchToolPack(selectedTool: string): Promise<ToolPack> {
       };
     }
 
-    // If any schema entry is an MCP server, we return early only with the MCP server schema with no built-in tools
-    const hasMcpServer = Array.isArray(schemaS.TOOL_SCHEMAS) &&
+    // If any schema entry is an MCP server or Google Maps, we return early only with schemas with no built-in tools
+    const hasExclusiveTool = Array.isArray(schemaS.TOOL_SCHEMAS) &&
     schemaS.TOOL_SCHEMAS.some((chkschema: unknown) =>
       typeof chkschema === "object" &&
       chkschema !== null &&
       "type" in chkschema &&
-      chkschema.type === "mcp_server");
+      (chkschema.type === "mcp_server" || chkschema.type === "google_maps"));
 
-    if (hasMcpServer) {
+    if (hasExclusiveTool) {
       return {
         schemas: [...schemaS.TOOL_SCHEMAS],
         functions: {},
