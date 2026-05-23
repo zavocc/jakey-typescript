@@ -12,6 +12,19 @@
             }
         },
         {
+            "model_id": "gemini-3.5-flash",
+            "model_alias": "Gemini 3.5 Flash Flex Mode Low",
+            "enable_files": true,
+            "enable_tools": true,
+            "additional_properties": {
+                "generation_config": {
+                    "thinking_level": "low",
+                    "max_output_tokens": 4096
+                },
+                "service_tier": "flex"
+            }
+        },
+        {
             "model_id": "gemini-3.1-pro-preview",
             "model_alias": "Gemini 3.1 Pro Preview Standard Mode",
             "enable_files": true,
