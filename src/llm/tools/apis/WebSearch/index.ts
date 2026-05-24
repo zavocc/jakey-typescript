@@ -4,6 +4,18 @@ import { EmbedBuilder, type Message, type SendableChannels } from "discord.js";
 
 const childLogger = logger.child({ module: "llm.tools.apis.WebSearch" });
 
+interface TavilySearchResult {
+  title: string;
+  url: string;
+  content: string;
+  score: number;
+}
+
+interface TavilySearchResponse {
+  results: TavilySearchResult[];
+  images?: Array<{ url: string; description: string }>;
+}
+
 export async function web_search(discord_interaction: Message | undefined, params: { query: string, n_results?: number, pull_images?: boolean }): Promise<object> {
   const messageChannel: SendableChannels = getSendableChannel(discord_interaction);
 
@@ -44,17 +56,24 @@ export async function web_search(discord_interaction: Message | undefined, param
 
   await messageChannel.send(`🔍 Searched for **${params.query}**`)
 
-  const rawData = await response.json();
+  const rawData: TavilySearchResponse = await response.json();
 
   // Check if rawData.results is defined and has the expected structure
   if (!rawData.results || !Array.isArray(rawData.results)) {
     throw new Error("No results found from the Web Search API.");
   }
 
+  // get title and url for supportable citations
+  const supportable_sources = rawData.results.map((result) => ({
+    title: result.title,
+    url: result.url,
+  }));
+
   return {
     scores: "Utilize the score field to rank the relevance of the search results. A higher score indicates a more relevant result to the query. Use this score to prioritize which sources to reference in your response.",
     images: rawData.images ?? [],
-    results: rawData.results
+    results: rawData.results,
+    supportable_sources: supportable_sources,
   };
 }
 

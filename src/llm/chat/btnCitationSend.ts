@@ -9,8 +9,11 @@ export function linkBtnAggregator(citations: Array<{ title: string; url: string 
     index === self.findIndex((cite) => cite.url?.trim() === citation.url?.trim())
   );
   const buttons = uniqueCitations.map((citation) => {
+    // Trim citation title to 80 characters and add ellipsis if necessary
+    const cleanTitle = citation.title.length > 80 ? citation.title.slice(0, 77) + "..." : citation.title;
+
     return new ButtonBuilder()
-      .setLabel(citation.title)
+      .setLabel(cleanTitle)
       .setStyle(ButtonStyle.Link)
       .setEmoji("🌐")
       .setURL(citation.url.trim());

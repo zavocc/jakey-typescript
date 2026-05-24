@@ -134,18 +134,13 @@ export async function chatToLLM(
             if (content.annotations) {
               content.annotations.forEach((citedURLs) => {
                 if (citedURLs.type === 'url_citation' && citedURLs.url) {
-                  // Truncate title to avoid exceeding button label length
-                  const cleanTitle = (citedURLs.title?.trim() || "Source").length > 80 ? (citedURLs.title?.trim() || "Source").slice(0, 77) + "..." : (citedURLs.title?.trim() || "Source");
-
                   citations.push({
-                    title: cleanTitle,
+                    title: citedURLs.title?.trim() || "Source",
                     url: citedURLs.url,
                   });
                 } else if (citedURLs.type === 'place_citation' && citedURLs.name && citedURLs.url) {
-                  const cleanName = (citedURLs.name?.trim() || "Source").length > 80 ? (citedURLs.name?.trim() || "Source").slice(0, 77) + "..." : (citedURLs.name?.trim() || "Source");
-
                   citations.push({
-                    title: cleanName,
+                    title: citedURLs.name?.trim() || "Source",
                     url: citedURLs.url,
                   });
                 }
@@ -200,6 +195,17 @@ export async function chatToLLM(
               logger.error({ 'tool_name': steps.name, 'tool_id': steps.id, 'user_snowflake': discord_interaction.author.id }, "Max tool calls limit reached")
             } else {
               toolResult = await toolFunction(discord_interaction, steps.arguments ?? {});
+
+              // Check if toolResult is an object and see if it has "supportable_sources" key so we can add it in citations list
+              if (typeof toolResult === 'object' && toolResult !== null && 'supportable_sources' in toolResult) {
+                // Ensure supportable_sources is Array<{ title: string; url: string }> check first
+                if (Array.isArray(toolResult.supportable_sources) && toolResult.supportable_sources.every((item) => typeof item === 'object' && item !== null && typeof item.title === 'string' && typeof item.url === 'string')) {
+                  citations.push(...(toolResult as { supportable_sources: Array<{ title: string; url: string }> }).supportable_sources);
+                }
+
+                // Then we remove supportable_sources key from toolResult so it doesn't get returned to the model
+                delete (toolResult as Record<string, unknown>).supportable_sources;
+              }
 
               // If the function returns void or undefined, we tell the model it doesn't return anything
               if (toolResult === undefined || toolResult === null) {
