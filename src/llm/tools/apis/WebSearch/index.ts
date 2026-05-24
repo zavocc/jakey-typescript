@@ -45,6 +45,7 @@ export async function web_search(discord_interaction: Message | undefined, param
       body: JSON.stringify({
         query: params.query,
         search_depth: "basic",
+        max_results: params.n_results,
         include_images: params.pull_images ?? false,
         include_image_descriptions: params.pull_images ?? false
       })
