@@ -199,8 +199,17 @@ export async function chatToLLM(
               // Check if toolResult is an object and see if it has "supportable_sources" key so we can add it in citations list
               if (typeof toolResult === 'object' && toolResult !== null && 'supportable_sources' in toolResult) {
                 // Ensure supportable_sources is Array<{ title: string; url: string }> check first
-                if (Array.isArray(toolResult.supportable_sources) && toolResult.supportable_sources.every((item) => typeof item === 'object' && item !== null && typeof item.title === 'string' && typeof item.url === 'string')) {
-                  citations.push(...(toolResult as { supportable_sources: Array<{ title: string; url: string }> }).supportable_sources);
+                if (Array.isArray(toolResult.supportable_sources) &&
+                  toolResult.supportable_sources.every((item) => typeof item === 'object'
+                  && item !== null && typeof item.title === 'string'
+                  && typeof item.url === 'string')) {
+                  // Extract and cast the sources array once
+                  const sources = (toolResult as { supportable_sources: Array<{ title: string; url: string }> }).supportable_sources;
+
+                  citations.push(...sources);
+                  childLogger.debug({ tool_name: steps.name, supportable_sources: sources }, "Found valid supportable_sources for sources to be cited");
+                } else {
+                  childLogger.debug({ tool_name: steps.name, supportable_sources: toolResult.supportable_sources }, "Found supportable_sources but the format is not valid... ignoring.");
                 }
 
                 // Then we remove supportable_sources key from toolResult so it doesn't get returned to the model
