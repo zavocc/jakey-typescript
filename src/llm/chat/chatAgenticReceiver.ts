@@ -4,7 +4,8 @@ import { JAKEY_SYSTEM_PROMPT } from "../../data/sysprompts.js";
 import { text_chat_completion } from "../generateContentChat.js";
 import { loadPreferences, savePreferences } from "../../lib/preferencesDBLoader.js";
 import { fileTypeFromBuffer } from 'file-type';
-import { linkBtnAggregator, queryBtnAggregator, sendBtns } from "./btnCitationSend.js";
+import { isSupportableCitations, linkBtnAggregator, queryBtnAggregator, sendBtns } from "./btnCitationSend.js";
+import type { SupportableCitation } from "./btnCitationSend.js";
 import type { FileMetadata } from "../types.js";
 import type { ModelProps } from "../../types/schemas.js";
 import type { Message, SendableChannels } from 'discord.js';
@@ -88,7 +89,7 @@ export async function chatToLLM(
   interactionIDStored = response.interactionID;
 
   // Queries and citations
-  const citations: Array<{ title: string; url: string }> = [];
+  const citations: Array<SupportableCitation> = [];
   const queries: Array<string> = [];
 
   // Handle responses and agentic loop inside of this toolHasDone loop, and we display each response modalities one by one
@@ -196,20 +197,15 @@ export async function chatToLLM(
             } else {
               toolResult = await toolFunction(discord_interaction, steps.arguments ?? {});
 
-              // Check if toolResult is an object and see if it has "supportable_sources" key so we can add it in citations list
-              if (typeof toolResult === 'object' && toolResult !== null && 'supportable_sources' in toolResult) {
-                // Ensure supportable_sources is Array<{ title: string; url: string }> check first
-                if (Array.isArray(toolResult.supportable_sources) &&
-                  toolResult.supportable_sources.every((item) => typeof item === 'object'
-                  && item !== null && typeof item.title === 'string'
-                  && typeof item.url === 'string')) {
-                  // Extract and cast the sources array once
-                  const sources = (toolResult as { supportable_sources: Array<{ title: string; url: string }> }).supportable_sources;
+              // Check if toolResult includes supportable sources that can be added to the citations list.
+              if (typeof toolResult === "object" && toolResult !== null && Object.hasOwn(toolResult, "supportable_sources")) {
+                const sources = (toolResult as Record<string, unknown>).supportable_sources;
 
+                if (isSupportableCitations(sources)) {
                   citations.push(...sources);
                   childLogger.debug({ tool_name: steps.name, supportable_sources: sources }, "Found valid supportable_sources for sources to be cited");
                 } else {
-                  childLogger.debug({ tool_name: steps.name, supportable_sources: toolResult.supportable_sources }, "Found supportable_sources but the format is not valid... ignoring.");
+                  childLogger.debug({ tool_name: steps.name, supportable_sources: sources }, "Found supportable_sources but the format is not valid... ignoring.");
                 }
 
                 // Then we remove supportable_sources key from toolResult so it doesn't get returned to the model

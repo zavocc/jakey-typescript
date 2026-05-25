@@ -1,6 +1,20 @@
 import { ActionRowBuilder, ButtonBuilder, ButtonStyle, SendableChannels } from "discord.js";
 
-export function linkBtnAggregator(citations: Array<{ title: string; url: string }>): Array<ActionRowBuilder<ButtonBuilder>> {
+export type SupportableCitation = {
+  title: string;
+  url: string;
+};
+
+export function isSupportableCitations(value: unknown): value is SupportableCitation[] {
+  return Array.isArray(value) && value.every((item) =>
+    typeof item === "object" &&
+    item !== null &&
+    typeof (item as Record<string, unknown>).title === "string" &&
+    typeof (item as Record<string, unknown>).url === "string"
+  );
+}
+
+export function linkBtnAggregator(citations: Array<SupportableCitation>): Array<ActionRowBuilder<ButtonBuilder>> {
   const ActionRows: Array<ActionRowBuilder<ButtonBuilder>> = [];
 
   // Remove duplicate citations

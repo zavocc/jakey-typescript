@@ -4,17 +4,17 @@ import { EmbedBuilder, type Message, type SendableChannels } from "discord.js";
 
 const childLogger = logger.child({ module: "llm.tools.apis.WebSearch" });
 
-interface TavilySearchResult {
+type TavilySearchResult = {
   title: string;
   url: string;
   content: string;
   score: number;
-}
+};
 
-interface TavilySearchResponse {
+type TavilySearchResponse = {
   results: TavilySearchResult[];
   images?: Array<{ url: string; description: string }>;
-}
+};
 
 export async function web_search(discord_interaction: Message | undefined, params: { query: string, n_results?: number, pull_images?: boolean }): Promise<object> {
   const messageChannel: SendableChannels = getSendableChannel(discord_interaction);
