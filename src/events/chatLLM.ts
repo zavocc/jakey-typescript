@@ -1,8 +1,10 @@
 import logger from "../lib/pinoLogger.js";
 import { loadPreferences } from "../lib/preferencesDBLoader.js";
 import { Events, Message } from "discord.js";
-import { chatToLLM } from "../llm/chat/chatAgenticReceiver.js";
-import type { FileMetadata } from "../llm/types.js";
+import { pullAgent, type LLMExecuteFn } from "../llm/agentLoader.js";
+import { getModelProps } from "../llm/chat/modelsSelection.js";
+import type { FileMetadata } from "../llm/providers/google/types.js";
+import type { ModelProps } from "../types/schemas.js";
 
 const childLogger = logger.child({ module: "events.chatLLM" });
 
@@ -43,7 +45,15 @@ export default {
       }));
 
       try {
-        await chatToLLM(strippedContent, userId, message, attachmentUrls);
+        // Load model properties
+        const modelProps: ModelProps = await getModelProps(userId);
+        // Log ModelProps debug
+        childLogger.debug({ model_props: modelProps, user_snowflake: userId }, "ModelProps loaded");
+
+        // Pull Agent
+        const agentSdkProvider: LLMExecuteFn = await pullAgent(modelProps.provider);
+
+        await agentSdkProvider(strippedContent, modelProps, userId, message, attachmentUrls);
       } catch (error) {
         // narrows to Error type
         if (error instanceof Error && error.message.includes("does not support file attachments")) {
@@ -53,7 +63,10 @@ export default {
           childLogger.warn({ model_used: modelUsed, user_snowflake: userId }, "The user selected a model that is unavailable from models.json");
           await textChannel.send("The model you have selected is currently unavailable, please select a different model");
         } else {
-          childLogger.error({ err: error, user_snowflake: userId }, "Error generating response");
+          const normalizedError = error instanceof Error ? error : new Error(String(error));
+          childLogger.error({ err: normalizedError, user_snowflake: userId }, "Error generating response");
+
+          // Send generic error message to the user
           await textChannel.send("Sorry, I couldn't generate a response at the moment.");
         }
       } finally {

@@ -1,5 +1,5 @@
 import logger from "../../../../lib/pinoLogger.js";
-import { uploadToGoogleFilesAPI } from "../../../fileUpload.js";
+import { uploadToGoogleFilesAPI } from "../../../providers/google/fileUpload.js";
 import { GoogleClient } from "../../../../lib/genAIClients.js";
 import { getSendableChannel } from "../../functions.js";
 import { createUserContent, createPartFromUri } from "@google/genai";

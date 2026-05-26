@@ -1,5 +1,5 @@
-import logger from '../lib/pinoLogger.js';
-import { GoogleClient } from '../lib/genAIClients.js';
+import logger from '../../../lib/pinoLogger.js';
+import { GoogleClient } from '../../../lib/genAIClients.js';
 import { uploadToGoogleFilesAPI } from './fileUpload.js';
 import type { FileMetadata } from './types.js';
 import type { Interactions } from '@google/genai';

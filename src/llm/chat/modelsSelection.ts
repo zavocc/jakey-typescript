@@ -4,16 +4,17 @@ import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { z } from "zod";
 
-type ModelPropsType = z.infer<typeof ModelPropsSchema>;
+const ModelsFileSchema = z.object({
+  models: z.array(ModelPropsSchema),
+});
 
-type ModelsFile = {
-  models: Array<ModelPropsType>;
-};
+type ModelPropsType = z.infer<typeof ModelPropsSchema>;
+type ModelsFile = z.infer<typeof ModelsFileSchema>;
 
 export async function loadModelsFile(): Promise<ModelsFile> {
   const modelsPath = path.resolve(process.cwd(), "src", "models.json");
   const raw = await readFile(modelsPath, "utf-8");
-  return JSON.parse(raw) as ModelsFile;
+  return ModelsFileSchema.parse(JSON.parse(raw));
 }
 
 // TODO: To cache models list in memory after first read, refresh after ttl expires, since it won't change until we restart the bot.

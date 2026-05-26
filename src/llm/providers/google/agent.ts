@@ -1,18 +1,17 @@
-import logger from "../../lib/pinoLogger.js";
-import { getModelProps } from "./modelsSelection.js";
-import { JAKEY_SYSTEM_PROMPT } from "../../data/sysprompts.js";
-import { text_chat_completion } from "../generateContentChat.js";
-import { loadPreferences, savePreferences } from "../../lib/preferencesDBLoader.js";
+import logger from "../../../lib/pinoLogger.js";
+import { JAKEY_SYSTEM_PROMPT } from "../../../data/sysprompts.js";
+import { text_chat_completion } from "./generateContentChat.js";
+import { loadPreferences, savePreferences } from "../../../lib/preferencesDBLoader.js";
 import { fileTypeFromBuffer } from 'file-type';
-import { isSupportableCitations, linkBtnAggregator, queryBtnAggregator, sendBtns } from "./btnCitationSend.js";
-import type { SupportableCitation } from "./btnCitationSend.js";
-import type { FileMetadata } from "../types.js";
-import type { ModelProps } from "../../types/schemas.js";
+import { isSupportableCitations, linkBtnAggregator, queryBtnAggregator, sendBtns } from "../../chat/btnCitationSend.js";
+import type { SupportableCitation } from "../../chat/btnCitationSend.js";
+import type { FileMetadata } from "./types.js";
 import type { Message, SendableChannels } from 'discord.js';
 import type { Interactions } from "@google/genai";
+import type { ModelProps } from "../../../types/schemas.js";
 
 // Tool loader
-import { fetchToolPack } from "../tools/utils.js";
+import { fetchToolPack } from "../../tools/utils.js";
 
 const childLogger = logger.child({ module: "llm.chat.chatAgenticReceiver" });
 
@@ -28,8 +27,9 @@ async function sendChunkedMessage(
   }
 }
 
-export async function chatToLLM(
+export async function llmExecute(
   prompt: string,
+  model_props: ModelProps,
   discord_user_id: string,
   discord_interaction: Message,
   attachment_urls?: Array<FileMetadata>,
@@ -40,22 +40,19 @@ export async function chatToLLM(
     throw new Error("Message channel is not available.");
   }
 
-  // Load model properties
-  const modelProps: ModelProps = await getModelProps(discord_user_id);
-
   // Load context and it's associated thread if existed
   const context = await loadPreferences(discord_user_id, "current_interaction_id");
 
   // Check if we have attachments but the model doesn't support it
-  if (attachment_urls && attachment_urls.length > 0 && !modelProps.enable_files) {
+  if (attachment_urls && attachment_urls.length > 0 && !model_props.enable_files) {
     throw new Error("Sorry, the current model does not support file attachments.");
   }
 
   let additionalParams: Record<string, unknown> = {};
 
   // Spread additional properties from model config
-  if (modelProps.additional_properties) {
-    additionalParams = { ...modelProps.additional_properties };
+  if (model_props.additional_properties) {
+    additionalParams = { ...model_props.additional_properties };
   }
 
   // Load tool schemas and functions
@@ -64,7 +61,7 @@ export async function chatToLLM(
   const loadedToolPack = await fetchToolPack(toolSelection ?? "Disabled"); // This returns both schema list and functions list in a pack
 
   // Tools
-  if (modelProps.enable_tools) {
+  if (model_props.enable_tools) {
     additionalParams = {
       ...additionalParams,
       tools: loadedToolPack.schemas,
@@ -75,7 +72,7 @@ export async function chatToLLM(
   let interactionIDStored: string | undefined;
   let toolHasDone = false;
   let response = await text_chat_completion(
-    modelProps.model_id,
+    model_props.model_id,
     prompt,
     {
       interactions_context_id: context ?? undefined,
@@ -265,7 +262,7 @@ export async function chatToLLM(
       // Send all tool results for this interaction together. Each call_id belongs
       // to the interaction that produced the current response.modelSteps.
       response = await text_chat_completion(
-        modelProps.model_id,
+        model_props.model_id,
         toolResults,
         {
           interactions_context_id: interactionIDStored,

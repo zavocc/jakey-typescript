@@ -5,6 +5,7 @@
             "model_alias": "Gemini 3 Flash Preview",
             "enable_files": true,
             "enable_tools": true,
+            "provider": "google",
             "additional_properties": {
                 "generation_config": {
                     "thinking_level": "low"
@@ -16,6 +17,7 @@
             "model_alias": "Gemini 3 Flash Flex Mode",
             "enable_files": true,
             "enable_tools": true,
+            "provider": "google",
             "additional_properties": {
                 "generation_config": {
                     "thinking_level": "low",
@@ -29,6 +31,7 @@
             "model_alias": "Gemini 3.5 Flash Flex Mode Low",
             "enable_files": true,
             "enable_tools": true,
+            "provider": "google",
             "additional_properties": {
                 "generation_config": {
                     "thinking_level": "low",
@@ -42,6 +45,7 @@
             "model_alias": "Gemini 3.1 Pro Preview Standard Mode",
             "enable_files": true,
             "enable_tools": true,
+            "provider": "google",
             "additional_properties": {
                 "generation_config": {
                     "thinking_level": "low"
@@ -53,6 +57,7 @@
             "model_alias": "Gemini 3.1 Pro Preview Flex Mode",
             "enable_files": true,
             "enable_tools": true,
+            "provider": "google",
             "additional_properties": {
                 "generation_config": {
                     "thinking_level": "low"
@@ -65,6 +70,7 @@
             "model_alias": "Gemini 3.1 Flash (Fast)",
             "enable_files": true,
             "enable_tools": true,
+            "provider": "google",
             "additional_properties": {
                 "generation_config": {
                     "thinking_level": "minimal"
