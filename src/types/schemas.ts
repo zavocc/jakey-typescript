@@ -14,6 +14,7 @@ export const ModelPropsSchema = z.object({
   enable_files: z.boolean(),
   enable_tools: z.boolean(),
   provider: z.enum(["google", "openai", "openrouter"]),
+  thread_name: z.string().optional(),
   additional_properties: z.record(z.string(), z.unknown()).optional()
 });
 

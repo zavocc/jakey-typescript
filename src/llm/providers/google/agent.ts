@@ -1,6 +1,9 @@
 import logger from "../../../lib/pinoLogger.js";
+import { sendChunkedMessage } from "../../chat/message.js";
+import { loadContext, saveContext } from "../../chat/contextMemory.js";
+import { constructUserPrompt } from "./promptTools.js";
 import { JAKEY_SYSTEM_PROMPT } from "../../../data/sysprompts.js";
-import { text_chat_completion } from "./generateContentChat.js";
+import { text_chat_completion } from "./generateContent.js";
 import { loadPreferences, savePreferences } from "../../../lib/preferencesDBLoader.js";
 import { fileTypeFromBuffer } from 'file-type';
 import { isSupportableCitations, linkBtnAggregator, queryBtnAggregator, sendBtns } from "../../chat/btnCitationSend.js";
@@ -14,18 +17,6 @@ import type { ModelProps } from "../../../types/schemas.js";
 import { fetchToolPack } from "../../tools/utils.js";
 
 const childLogger = logger.child({ module: "llm.chat.chatAgenticReceiver" });
-
-async function sendChunkedMessage(
-  messageChannel: SendableChannels,
-  text: string,
-  chunkSize = 2000,
-): Promise<void> {
-  if (!text.length) return;
-
-  for (let i = 0; i < text.length; i += chunkSize) {
-    await messageChannel.send(text.slice(i, i + chunkSize));
-  }
-}
 
 export async function llmExecute(
   prompt: string,
@@ -41,12 +32,16 @@ export async function llmExecute(
   }
 
   // Load context and it's associated thread if existed
-  const context = await loadPreferences(discord_user_id, "current_interaction_id");
+  const context: Interactions.Content[] = await loadContext(discord_user_id, model_props.thread_name);
 
   // Check if we have attachments but the model doesn't support it
   if (attachment_urls && attachment_urls.length > 0 && !model_props.enable_files) {
     throw new Error("Sorry, the current model does not support file attachments.");
   }
+
+  // process prompt
+  const constructedPrompt = await constructUserPrompt(prompt, attachment_urls);
+  context.push(...constructedPrompt);
 
   let additionalParams: Record<string, unknown> = {};
 
@@ -73,17 +68,12 @@ export async function llmExecute(
   let toolHasDone = false;
   let response = await text_chat_completion(
     model_props.model_id,
-    prompt,
+    context,
     {
-      interactions_context_id: context ?? undefined,
       system_prompt: JAKEY_SYSTEM_PROMPT,
-      attachment_urls,
-      additional_properties: additionalParams,
+      additional_properties: additionalParams
     }
   );
-
-  // Save interaction ID throughout the loop
-  interactionIDStored = response.interactionID;
 
   // Queries and citations
   const citations: Array<SupportableCitation> = [];
@@ -168,6 +158,9 @@ export async function llmExecute(
         hasToolCalls = true;
         let toolResult;
         let schemaHasFound = false;
+
+        // Push the latest steps
+        context.push(...response.modelSteps)
 
         // Check if the tool.name is in the schemas so hallucinated or unauthorized functions cannot be called
         for (const schema of loadedToolPack.schemas) {
@@ -265,9 +258,7 @@ export async function llmExecute(
         model_props.model_id,
         toolResults,
         {
-          interactions_context_id: interactionIDStored,
           system_prompt: JAKEY_SYSTEM_PROMPT,
-          attachment_urls: undefined,
           additional_properties: additionalParams,
         }
       );
