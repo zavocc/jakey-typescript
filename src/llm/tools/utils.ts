@@ -1,7 +1,6 @@
 import logger from "../../lib/pinoLogger.js";
 import { readdir } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
-import { fetchBuiltInToolPack } from "./builtins/index.js";
 import { isFunctionToolSchema } from "./functions.js";
 import type { Message } from "discord.js";
 
@@ -14,75 +13,98 @@ type ToolPack = {
   functions: Record<string, ToolHandler>;
 };
 
+/**
+ * Scans a directory for tool subdirectories, dynamically imports each `index.js`,
+ * and collects `TOOL_SCHEMAS` arrays and exported functions.
+ */
+async function loadBuiltInToolDirectory(dirUrl: URL): Promise<ToolPack> {
+  const dirPath = fileURLToPath(dirUrl);
+  const entries = await readdir(dirPath, { withFileTypes: true });
+  const toolDirectories = entries
+    .filter((entry) => entry.isDirectory())
+    .sort((a, b) => a.name.localeCompare(b.name));
+
+  const schemas: unknown[] = [];
+  const functions: Record<string, ToolHandler> = {};
+
+  await Promise.all(
+    toolDirectories.map(async (entry) => {
+      try {
+        const toolModule = await import(`${dirUrl.href}${entry.name}/index.js`);
+
+        // Skip modules that don't export TOOL_SCHEMAS
+        if (!Array.isArray(toolModule.TOOL_SCHEMAS)) {
+          childLogger.warn({ tool_directory_name: entry.name }, "Tool directory does not export TOOL_SCHEMAS array, skipping...");
+          return;
+        }
+
+        // Push each schema from the TOOL_SCHEMAS array
+        for (const _sel_schema of toolModule.TOOL_SCHEMAS) {
+          schemas.push(_sel_schema);
+
+          // Warn if the schema is a function tool schema but there is no matching function export
+          if (isFunctionToolSchema(_sel_schema) && typeof toolModule[_sel_schema.name] !== "function") {
+            childLogger.warn({ tool_directory_name: entry.name, tool_name: _sel_schema.name }, "Tool exports a schema without a matching function.");
+          }
+        }
+
+        // Collect all exported functions
+        for (const [exportName, value] of Object.entries(toolModule)) {
+          if (typeof value === "function") {
+            functions[exportName] = value as ToolHandler;
+          }
+        }
+      } catch (error) {
+        childLogger.error({ tool_directory_name: entry.name, cause: error }, "Failed to load tool directory.");
+      }
+    })
+  );
+
+  return { schemas, functions };
+}
+
 export async function fetchToolPack(selectedTool: string): Promise<ToolPack> {
-  // if selectedTool name is "Disabled", we can only import built-in schemas from builtins/
-  // Load built-in schemas by default and tool functions
-  const builtInToolPack = await fetchBuiltInToolPack();
-  let allSchemas: Array<unknown>;
-  let allTools: Record<string, ToolHandler>;
+  // Always load built-in tools
+  const builtInToolPack = await loadBuiltInToolDirectory(new URL("./builtins/", import.meta.url));
 
-  // Load tools if selected tool is disabled, otherwise we only load builtin tools
+  const allSchemas: unknown[] = [...builtInToolPack.schemas];
+  const allTools: Record<string, ToolHandler> = { ...builtInToolPack.functions };
+
+  // Load togglable tool if selected
   if (selectedTool !== "Disabled") {
-    const schemaS = await import(`./apis/${selectedTool}/schema.js`);
-
-    // check if schemaS have TOOL_HUMAN_NAME otherwise we skip this tool
-    if (!schemaS.TOOL_HUMAN_NAME) {
-      childLogger.warn({ selected_tool: selectedTool }, "The selected tool does not have TOOL_HUMAN_NAME, skipping...");
-      return {
-        schemas: [...builtInToolPack.schemas],
-        functions: { ...builtInToolPack.functions },
-      };
-    }
-
-    // If any schema entry is an MCP server or Google Maps, we return early only with schemas with no built-in tools
-    const hasExclusiveTool = Array.isArray(schemaS.TOOL_SCHEMAS) &&
-    schemaS.TOOL_SCHEMAS.some((chkschema: unknown) =>
-      typeof chkschema === "object" &&
-      chkschema !== null &&
-      "type" in chkschema &&
-      (chkschema.type === "mcp_server" || chkschema.type === "google_maps"));
-
-    if (hasExclusiveTool) {
-      return {
-        schemas: [...schemaS.TOOL_SCHEMAS],
-        functions: {},
-      };
-    }
-
-    // Load the built-in tools and schema first
-    allSchemas = [...builtInToolPack.schemas, ...schemaS.TOOL_SCHEMAS];
-    allTools = { ...builtInToolPack.functions };
-
-    // Try to import functions — if the tool is schema-only (no index.js), skip
     try {
-      const functionS = await import(`./apis/${selectedTool}/index.js`);
+      const togglableModule = await import(`./togglables/${selectedTool}/index.js`);
 
-      // Check if each function schema tool names have matching function exports in the module functionS
-      for (const _sel_schema of schemaS.TOOL_SCHEMAS) {
-        // Warn if the schema is a function tool schema but there is no matching function export in the module
-        if (isFunctionToolSchema(_sel_schema) && typeof functionS[_sel_schema.name] !== "function") {
-          childLogger.warn({ selected_tool: selectedTool, tool_name: _sel_schema.name }, "Selected tool loaded exports a schema without a matching function.");
+      // Togglables require both TOOL_SCHEMAS and TOOL_HUMAN_NAME
+      if (!Array.isArray(togglableModule.TOOL_SCHEMAS)) {
+        childLogger.warn({ selected_tool: selectedTool }, "The selected tool does not export TOOL_SCHEMAS array, skipping...");
+        return { schemas: allSchemas, functions: allTools };
+      }
+
+      if (!togglableModule.TOOL_HUMAN_NAME) {
+        childLogger.warn({ selected_tool: selectedTool }, "The selected tool does not have TOOL_HUMAN_NAME, skipping...");
+        return { schemas: allSchemas, functions: allTools };
+      }
+
+      // Add schemas
+      for (const _sel_schema of togglableModule.TOOL_SCHEMAS) {
+        allSchemas.push(_sel_schema);
+
+        // Warn if a function schema has no matching function export
+        if (isFunctionToolSchema(_sel_schema) && typeof togglableModule[_sel_schema.name] !== "function") {
+          childLogger.warn({ selected_tool: selectedTool, tool_name: _sel_schema.name }, "Selected tool exports a schema without a matching function.");
         }
       }
 
-      // Look-up all exported functions only
-      const toolapi_functions = Object.fromEntries(
-        Object.entries(functionS)
-          // Ignore the key as we can only check if the value is function
-          // Returns after running Object.entries: [["web_search", async () => {}]]
-          .filter(([, valueFunction]) => typeof valueFunction === "function")
-      ) as Record<string, ToolHandler>;
-
-      // Add the exported functions to registered functions so the agent can call later
-      allTools = { ...allTools, ...toolapi_functions };
-    } catch {
-      // Schema-only tool (e.g. GoogleSearch) — no functions to import or an error has occurred
-      // TODO: to log with errors properly
-      // childLogger.info({ selected_tool: selectedTool }, "The selected tool does not have functions to import, this indicates this is might be a non-mcp hosted tool")
+      // Collect exported functions
+      for (const [exportName, value] of Object.entries(togglableModule)) {
+        if (typeof value === "function") {
+          allTools[exportName] = value as ToolHandler;
+        }
+      }
+    } catch (error) {
+      childLogger.error({ selected_tool: selectedTool, cause: error }, "Failed to load togglable tool.");
     }
-  } else {
-    allSchemas = [...builtInToolPack.schemas];
-    allTools = { ...builtInToolPack.functions };
   }
 
   return {
@@ -91,30 +113,30 @@ export async function fetchToolPack(selectedTool: string): Promise<ToolPack> {
   };
 }
 
-// Function to fetch all available tools from apis/ and find schema.ts with TOOL_HUMAN_NAME
+// Function to fetch all available togglable tools and find index.ts with TOOL_SCHEMAS and TOOL_HUMAN_NAME
 export async function fetchListAvailableTool(): Promise<Array<{ name: string; human_name: string }>> {
   const disabledTool = {
     name: "Disabled",
     human_name: "Disabled",
   };
 
-  const apisPath = fileURLToPath(new URL("./apis/", import.meta.url));
-  const entries = await readdir(apisPath, { withFileTypes: true });
+  const togglablesPath = fileURLToPath(new URL("./togglables/", import.meta.url));
+  const entries = await readdir(togglablesPath, { withFileTypes: true });
 
   const toolList = await Promise.all(
     entries
       .filter((entry) => entry.isDirectory())
       .map(async (entry) => {
         try {
-          const schemaModule = await import(`./apis/${entry.name}/schema.js`);
+          const toolModule = await import(`./togglables/${entry.name}/index.js`);
 
-          if (typeof schemaModule.TOOL_HUMAN_NAME !== "string") {
+          if (!Array.isArray(toolModule.TOOL_SCHEMAS) || typeof toolModule.TOOL_HUMAN_NAME !== "string") {
             return null;
           }
 
           return {
             name: entry.name,
-            human_name: schemaModule.TOOL_HUMAN_NAME,
+            human_name: toolModule.TOOL_HUMAN_NAME,
           };
         } catch {
           return null;

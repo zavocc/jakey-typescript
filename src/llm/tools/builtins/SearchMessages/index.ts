@@ -19,7 +19,7 @@ type ResultsShape = {
   attachments: Array<{ filename: string, mime_type: string | null, attachment_url: string }> | null;
 }
 
-export const SEARCH_MESSAGE_TOOL_SCHEMA =
+export const TOOL_SCHEMAS = [
 {
   type: "function",
   name: "search_messages",
@@ -62,9 +62,7 @@ export const SEARCH_MESSAGE_TOOL_SCHEMA =
     },
     required: ["searchTypes"],
   }
-}
-
-export const MULTIMODAL_READ_DISCORD_CDN_TOOL_SCHEMA =
+},
 {
   type: "function",
   name: "read_attachments_cdn",
@@ -92,6 +90,7 @@ export const MULTIMODAL_READ_DISCORD_CDN_TOOL_SCHEMA =
     required: ["assoc_message_url", "attachment_url", "filename", "mime_type"],
   }
 }
+]
 
 export async function search_messages(discord_interaction: Message, params: { searchTypes: "QUERIES" | "ATTACHMENTS" | "FIRST_FIFTY_MESSAGES", queries?: Array<string>, before?: string, around?: string, after?: string, ack_magic_string?: string }): Promise<string> {
   const messageChannel: SendableChannels = getSendableChannel(discord_interaction);

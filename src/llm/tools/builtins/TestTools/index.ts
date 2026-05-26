@@ -1,49 +1,45 @@
 import { getSendableChannel } from "../../functions.js";
 import { EmbedBuilder, Message, SendableChannels } from "discord.js";
 
-export const INVOKE_NO_FUNCTIONS_TOOL_SCHEMA =
-{
-  type: "function",
-  name: "no_op",
-  description: "Call this function for test",
-  parameters: {
-    type: "object",
-    properties: {
-      thought: {
-        type: "string",
-        description: "Thought",
-      }
-    },
-  }
-}
-
-export const EXCEPTION_INVOKE_TOOL_SCHEMA =
-{
-  type: "function",
-  name: "invoke_exception",
-  description: "Invoke Exception, for testing logs",
-  parameters: {
-    type: "object",
-    properties: {
-      initiate_exception: {
-        type: "boolean",
-        description: "Invoke an exception",
+export const TOOL_SCHEMAS = [
+  {
+    type: "function",
+    name: "no_op",
+    description: "Call this function for test",
+    parameters: {
+      type: "object",
+      properties: {
+        thought: {
+          type: "string",
+          description: "Thought",
+        }
       },
-    },
+    }
+  },
+  {
+    type: "function",
+    name: "invoke_exception",
+    description: "Invoke Exception, for testing logs",
+    parameters: {
+      type: "object",
+      properties: {
+        initiate_exception: {
+          type: "boolean",
+          description: "Invoke an exception",
+        },
+      },
+    }
+  },
+  {
+    type: "function",
+    name: "have_a_banana",
+    description: "Banana",
+    parameters: {
+      type: "object",
+      properties: {},
+    }
   }
-}
-
-
-export const HAVE_A_BANANA_TOOL_SCHEMA =
-{
-  type: "function",
-  name: "have_a_banana",
-  description: "Banana",
-  parameters: {
-    type: "object",
-    properties: {},
-  }
-}
+]
 
 export async function invoke_exception(discord_interaction: Message | undefined, params: { initiate_exception: boolean }): Promise<string> {
   void discord_interaction;

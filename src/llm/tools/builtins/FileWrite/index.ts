@@ -1,26 +1,27 @@
 import { Message, SendableChannels } from "discord.js";
 import { getSendableChannel } from "../../functions.js";
 
-export const FILE_WRITE_TOOL_SCHEMA =
-{
-  type: "function",
-  name: "file_write",
-  description: "Tool to write content as a downloadable Discord artifact.",
-  parameters: {
-    type: "object",
-    properties: {
-      content: {
-        type: "string",
-        description: "The content to write to the file.",
+export const TOOL_SCHEMAS = [
+  {
+    type: "function",
+    name: "file_write",
+    description: "Tool to write content as a downloadable Discord artifact.",
+    parameters: {
+      type: "object",
+      properties: {
+        content: {
+          type: "string",
+          description: "The content to write to the file.",
+        },
+        filename: {
+          type: "string",
+          description: "The filename for the written file, including extension (e.g., output.txt).",
+        }
       },
-      filename: {
-        type: "string",
-        description: "The filename for the written file, including extension (e.g., output.txt).",
-      }
-    },
-    required: ["content", "filename"],
+      required: ["content", "filename"],
+    }
   }
-}
+]
 
 export async function file_write(discord_interaction: Message, params: { content: string; filename: string }): Promise<string> {
   // Narrow to a channel type that is allowed to send messages
