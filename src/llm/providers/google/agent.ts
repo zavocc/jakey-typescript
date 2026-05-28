@@ -10,7 +10,6 @@ import { isSupportableCitations, linkBtnAggregator, queryBtnAggregator, sendBtns
 import type { SupportableCitation } from "../../chat/btnCitationSend.js";
 import type { FileMetadata } from "./types.js";
 import type { Message, SendableChannels } from 'discord.js';
-import type { Interactions } from "@google/genai";
 import type { ModelProps } from "../../../types/schemas.js";
 
 // Tool loader
@@ -32,7 +31,7 @@ export async function llmExecute(
   }
 
   // Load context and it's associated thread if existed
-  const context: Interactions.Content[] = await loadContext(discord_user_id, model_props.thread_name);
+  const context: Array<Record<string, unknown>> = await loadContext(discord_user_id, model_props.thread_name);
 
   // Check if we have attachments but the model doesn't support it
   if (attachment_urls && attachment_urls.length > 0 && !model_props.enable_files) {
@@ -41,7 +40,7 @@ export async function llmExecute(
 
   // process prompt
   const constructedPrompt = await constructUserPrompt(prompt, attachment_urls);
-  context.push(...constructedPrompt);
+  context.push(constructedPrompt);
 
   let additionalParams: Record<string, unknown> = {};
 
