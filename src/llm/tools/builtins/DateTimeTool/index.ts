@@ -2,7 +2,6 @@ import type { Message } from "discord.js";
 
 export const TOOL_SCHEMAS = [
   {
-    type: "function",
     name: "fetch_date_time",
     description: "Fetch current date time",
     parameters: {

@@ -1,7 +1,10 @@
 // functions to load and save to db
+import logger from "../../lib/pinoLogger.js";
 import { getDB } from "../../lib/services/mongodb/index.js";
 const MONGODB_COLLECTION_NAME = 'chat_contexts';
 const DEFAULT_THREAD_NAME = 'default';
+
+const childLogger = logger.child({ module: 'llm.chat.contextMemory' });
 
 async function getContextCollection() {
   const db = await getDB();
@@ -12,6 +15,8 @@ export async function loadContext(userId: string, threadName?: string) {
   try {
     const collection = await getContextCollection();
     const context = await collection.findOne({ userId });
+
+    childLogger.info({ thread_name: threadName || DEFAULT_THREAD_NAME, user_snowflake: userId }, "Loaded chat context for the user")
     return context?.messages?.[threadName || DEFAULT_THREAD_NAME] ?? [];
   } catch (error) {
     throw new Error(`Failed to load context for user ${userId}.`, { cause: error });
@@ -27,6 +32,8 @@ export async function saveContext(userId: string, context: Array<Record<string, 
       { $set: { [`messages.${threadName || DEFAULT_THREAD_NAME}`]: context } },
       { upsert: true }
     );
+
+    childLogger.info({ thread_name: threadName || DEFAULT_THREAD_NAME, user_snowflake: userId }, "Saved chat context for the user")
   } catch (error) {
     throw new Error(`Failed to save context for user ${userId}.`, { cause: error });
   }
@@ -35,4 +42,5 @@ export async function saveContext(userId: string, context: Array<Record<string, 
 export async function clearContext(userId: string): Promise<void> {
   const collection = await getContextCollection();
   await collection.deleteOne({ userId });
+  childLogger.info({ user_snowflake: userId }, "Cleared chat context for the user")
 }

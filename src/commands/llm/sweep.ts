@@ -1,6 +1,7 @@
 import { ChatInputCommandInteraction, MessageFlags, SlashCommandBuilder } from "discord.js";
+import { clearContext } from "../../llm/chat/contextMemory.js";
 // for resetting preferences
-import { savePreferences, clearUserPreferences } from "../../lib/preferencesDBLoader.js";
+import { clearUserPreferences } from "../../lib/preferencesDBLoader.js";
 
 export default {
   data: new SlashCommandBuilder()
@@ -18,12 +19,13 @@ export default {
     // Defer
     await interaction.deferReply({ flags: MessageFlags.Ephemeral });
 
+    // Clear the context for the user
+    await clearContext(userId);
+
     if (interaction.options.getBoolean("preferences")) {
       await clearUserPreferences(userId);
       await interaction.editReply("Your context history and user preferences have been cleared.");
     } else {
-      // Only delete current_interaction_id
-      await savePreferences(userId, "current_interaction_id", null);
       await interaction.editReply("Your context history has been cleared.");
     }
   },

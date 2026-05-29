@@ -2,7 +2,6 @@ import { Message } from "discord.js";
 
 export const TOOL_SCHEMAS = [
   {
-    type: "function",
     name: "react_message",
     description: "React to the user's current message with a single emoji. This tool only reacts to current message you're interacting with, and reactions are displayed below the user's message instead of a text message form.",
     parameters: {

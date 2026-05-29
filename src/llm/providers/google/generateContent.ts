@@ -1,59 +1,56 @@
 import logger from '../../../lib/pinoLogger.js';
 import { GoogleClient } from '../../../lib/genAIClients.js';
-import type { Interactions } from '@google/genai';
+import type { GenerateContentResponse } from '@google/genai';
+import type { Part } from "@google/genai";
 
 const childLogger = logger.child({ module: 'llm.generateContentChat' });
 
 export async function text_chat_completion(
   model: string,
-  prompt: string | Interactions.Content[] | Interactions.FunctionResultStep[],
+  context: Array<{parts: Part[], role: string}>,
   optional_params?: {
     system_prompt?: string,
     additional_properties?: Record<string, unknown>,
   },
 ): Promise<{
-  modelSteps: Interactions.Step[],
+  modelResponse: GenerateContentResponse,
   model_used: string,
-  interactionID: string
 }> {
   // Parse optional params
   const { system_prompt, additional_properties } = optional_params ?? {};
 
-  let additionalParams;
-  // Pass additional params if existed
-  if (additional_properties) {
-    additionalParams = additional_properties;
-  }
 
-  const interactionsResult = await GoogleClient.interactions.create({
-    ...additionalParams,
+  const modelResult = await GoogleClient.models.generateContent({
     model: model,
-    input: prompt,
-    stream: false,
-    system_instruction: system_prompt,
+    contents: context,
+    config: {
+      ...additional_properties,
+      systemInstruction: system_prompt,
+      temperature: undefined,
+      topP: undefined,
+      topK: undefined
+    }
   })
 
   // We cannot receive null output so we throw if it is null
-  if (!interactionsResult.steps) {
+  if (!modelResult) {
     throw new Error('No output received from the model.');
   }
 
   // Debug logs
-  if (interactionsResult.usage) childLogger.debug({
-    prompt: prompt,
-    totalInputtokenCnt: interactionsResult.usage.total_input_tokens,
-    totalOutputtokenCnt: interactionsResult.usage.total_output_tokens,
-    totalThinktokenCnt: interactionsResult.usage.total_thought_tokens,
-    totalCachedtokenCnt: interactionsResult.usage.total_cached_tokens,
-    totalTooltokenCnt: interactionsResult.usage.total_tool_use_tokens,
-    totalTokens: interactionsResult.usage.total_tokens,
-    responsesSteps: interactionsResult.steps
+  if (modelResult.usageMetadata) childLogger.debug({
+    prompt: context.at(-1),
+    promptTokenCount: modelResult.usageMetadata.promptTokenCount,
+    totalTokenCount: modelResult.usageMetadata.totalTokenCount,
+    thoughtsTokenCount: modelResult.usageMetadata.thoughtsTokenCount,
+    totalCachedtokenCnt: modelResult.usageMetadata.cachedContentTokenCount,
+    candidateOutputTokenCnt: modelResult.usageMetadata.candidatesTokenCount,
+    responseCandidates: modelResult.candidates,
   }, "Generated content chat");
 
 
   return {
-    modelSteps: interactionsResult.steps,
-    model_used: interactionsResult.model ?? "Not specified",
-    interactionID: interactionsResult.id
+    modelResponse: modelResult,
+    model_used: modelResult.modelVersion ?? "Not specified",
   };
 }

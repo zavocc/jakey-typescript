@@ -21,7 +21,6 @@ type ResultsShape = {
 
 export const TOOL_SCHEMAS = [
 {
-  type: "function",
   name: "search_messages",
   description: "Search through Discord messages in the current channel.",
   parameters: {
@@ -64,7 +63,6 @@ export const TOOL_SCHEMAS = [
   }
 },
 {
-  type: "function",
   name: "read_attachments_cdn",
   description: "Reads attachment for precise search and verify passages from user's request, only use this after calling search_messages with attachments",
   parameters: {

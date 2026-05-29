@@ -14,9 +14,9 @@ export async function constructUserPrompt(prompt: string, attachment_urls?: Arra
 
         return [
           {
-            file_data: {
-              mime_type: attachment.mimeType,
-              file_uri: curURI
+            fileData: {
+              mimeType: attachment.mimeType,
+              fileUri: curURI
             }
           },
           {

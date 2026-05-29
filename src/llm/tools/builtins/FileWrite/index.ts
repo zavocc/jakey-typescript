@@ -3,7 +3,6 @@ import { getSendableChannel } from "../../functions.js";
 
 export const TOOL_SCHEMAS = [
   {
-    type: "function",
     name: "file_write",
     description: "Tool to write content as a downloadable Discord artifact.",
     parameters: {

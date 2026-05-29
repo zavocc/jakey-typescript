@@ -7,8 +7,21 @@
             "enable_tools": true,
             "provider": "google",
             "additional_properties": {
-                "generation_config": {
-                    "thinking_level": "low"
+                "thinkingConfig": {
+                    "thinkingLevel": "low"
+                }
+            }
+        },
+        {
+            "model_id": "gemini-3-flash-preview",
+            "model_alias": "Gemini 3 Flash Preview with Thread name Morphine",
+            "enable_files": true,
+            "enable_tools": true,
+            "provider": "google",
+            "thread_name": "morphine",
+            "additional_properties": {
+                "thinkingConfig": {
+                    "thinkingLevel": "low"
                 }
             }
         },
@@ -19,11 +32,10 @@
             "enable_tools": true,
             "provider": "google",
             "additional_properties": {
-                "generation_config": {
-                    "thinking_level": "low",
-                    "max_output_tokens": 4096
-                },
-                "service_tier": "flex"
+                "serviceTier": "flex",
+                "thinkingConfig": {
+                    "thinkingLevel": "low"
+                }
             }
         },
         {
@@ -33,11 +45,11 @@
             "enable_tools": true,
             "provider": "google",
             "additional_properties": {
-                "generation_config": {
-                    "thinking_level": "low",
-                    "max_output_tokens": 4096
-                },
-                "service_tier": "flex"
+                "serviceTier": "flex",
+                "maxOutputTokens": 3024,
+                "thinkingConfig": {
+                    "thinkingLevel": "low"
+                }
             }
         },
         {
@@ -47,8 +59,8 @@
             "enable_tools": true,
             "provider": "google",
             "additional_properties": {
-                "generation_config": {
-                    "thinking_level": "low"
+                "thinkingConfig": {
+                    "thinkingLevel": "low"
                 }
             }
         },
@@ -59,21 +71,21 @@
             "enable_tools": true,
             "provider": "google",
             "additional_properties": {
-                "generation_config": {
-                    "thinking_level": "low"
-                },
-                "service_tier": "flex"
+                "serviceTier": "flex",
+                "thinkingConfig": {
+                    "thinkingLevel": "low"
+                }
             }
         },
         {
             "model_id": "gemini-3.1-flash-lite",
-            "model_alias": "Gemini 3.1 Flash (Fast)",
+            "model_alias": "Gemini 3.1 Flash-Lite",
             "enable_files": true,
             "enable_tools": true,
             "provider": "google",
             "additional_properties": {
-                "generation_config": {
-                    "thinking_level": "minimal"
+                "thinkingConfig": {
+                    "thinkingLevel": "minimal"
                 }
             }
         }

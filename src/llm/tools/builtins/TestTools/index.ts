@@ -3,7 +3,6 @@ import { EmbedBuilder, Message, SendableChannels } from "discord.js";
 
 export const TOOL_SCHEMAS = [
   {
-    type: "function",
     name: "no_op",
     description: "Call this function for test",
     parameters: {
@@ -17,7 +16,6 @@ export const TOOL_SCHEMAS = [
     }
   },
   {
-    type: "function",
     name: "invoke_exception",
     description: "Invoke Exception, for testing logs",
     parameters: {
@@ -31,7 +29,6 @@ export const TOOL_SCHEMAS = [
     }
   },
   {
-    type: "function",
     name: "have_a_banana",
     description: "Banana",
     parameters: {

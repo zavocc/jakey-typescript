@@ -7,7 +7,6 @@ const childLogger = logger.child({ module: "llm.tools.apis.WebSearch" });
 export const TOOL_HUMAN_NAME = "Web Search"
 export const TOOL_SCHEMAS = [
   {
-    type: "function",
     name: "web_search",
     description: "Search the web for latest information.",
     parameters: {
@@ -30,7 +29,6 @@ export const TOOL_SCHEMAS = [
     }
   },
   {
-    type: "function",
     name: "send_web_image",
     description: "Sends images to Discord UI.",
     parameters: {
@@ -60,7 +58,6 @@ export const TOOL_SCHEMAS = [
   },
   // This function doesn't exist, to test function doesn't exist error
   {
-    type: "function",
     name: "web_dialer",
     description: "Call Phone",
     parameters: {
