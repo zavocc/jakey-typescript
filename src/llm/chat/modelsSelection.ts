@@ -30,11 +30,10 @@ export async function getModelProps(userId: string): Promise<ModelPropsType> {
     : undefined;
 
   // If null, we get the first model in the list as default
-
   // Check if selected model exists from data, if not, throw an exception
   if (userModelAlias && !selectedModel) {
     throw new Error("Model unavailable");
   }
 
-  return selectedModel || models[0];
+  return selectedModel ?? models.at(0) ?? (() => { throw new Error("No models available"); })();;
 }
