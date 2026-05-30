@@ -1,16 +1,15 @@
 import logger from '../../../lib/pinoLogger.js';
 import { GoogleClient } from '../../../lib/genAIClients.js';
-import type { GenerateContentResponse } from '@google/genai';
-import type { Part } from "@google/genai";
+import type { GenerateContentConfig, GenerateContentResponse, Part } from '@google/genai';
 
-const childLogger = logger.child({ module: 'llm.generateContentChat' });
+const childLogger = logger.child({ module: 'llm.providers.google.generateContent' });
 
 export async function text_chat_completion(
   model: string,
   context: Array<{parts: Part[], role: string}>,
   optional_params?: {
     system_prompt?: string,
-    additional_properties?: Record<string, unknown>,
+    additional_properties?: GenerateContentConfig,
   },
 ): Promise<{
   modelResponse: GenerateContentResponse,

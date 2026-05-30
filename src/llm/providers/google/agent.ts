@@ -10,12 +10,12 @@ import type { SupportableCitation } from "../../chat/btnCitationSend.js";
 import type { FileMetadata } from "./types.js";
 import type { Message, SendableChannels } from 'discord.js';
 import type { ModelProps } from "../../../types/schemas.js";
-import type { Part } from "@google/genai";
+import type { GenerateContentConfig, FunctionDeclaration, Part } from "@google/genai";
 
 // Tool loader
 import { fetchToolPack } from "../../tools/utils.js";
 
-const childLogger = logger.child({ module: "llm.chat.chatAgenticReceiver" });
+const childLogger = logger.child({ module: "llm.providers.google.agent" });
 
 export async function llmExecute(
   prompt: string,
@@ -42,7 +42,7 @@ export async function llmExecute(
   const constructedPrompt = await constructUserPrompt(prompt, attachment_urls);
   chatContext.push(constructedPrompt);
 
-  let additionalParams: Record<string, unknown> = {};
+  let additionalParams: GenerateContentConfig = {};
 
   // Spread additional properties from model config
   if (model_props.additional_properties) {
@@ -58,7 +58,7 @@ export async function llmExecute(
   if (model_props.enable_tools) {
     additionalParams = {
       ...additionalParams,
-      tools: [{ functionDeclarations: loadedToolPack.schemas }],
+      tools: [{ functionDeclarations: loadedToolPack.schemas as FunctionDeclaration[] }],
     };
   }
 
@@ -181,13 +181,13 @@ export async function llmExecute(
               // If the function returns void or undefined, we tell the model it doesn't return anything
               if (toolResult === undefined || toolResult === null) {
                 childLogger.info({ tool_name: parts.functionCall.name, tool_id: parts.functionCall.id }, "The tool did not return a result")
-                toolResult = `The tool ${parts.functionCall.name} did not return a result`;
+                toolResult = { output: `The tool ${parts.functionCall.name} did not return a result` };
               }
 
               // Check if it directly returns bigInt, NOTE: any nested objects that has bigInt may fail and this check may not cover it
               if (typeof toolResult === "bigint") {
                 childLogger.info({ tool_name: parts.functionCall.name, tool_id: parts.functionCall.id }, "Possible direct bigint returned, safely converting to string...")
-                toolResult = `${toolResult}`;
+                toolResult = { output: `${toolResult}` };
               }
 
               logger.debug({ tool_result: toolResult, tool_name: parts.functionCall.name, tool_id: parts.functionCall.id, user_snowflake: discord_interaction.author.id }, "Tool result")
@@ -214,6 +214,18 @@ export async function llmExecute(
               ? `Tool ${parts.functionCall.name} is not available in the registered functions.`
               : `Function ${parts.functionCall.name} is not registered in the available tool schemas.`,
           };
+        }
+
+        // Prevent double-serialization: if a tool returned a JSON string,
+        // parse it back into an object so the SDK won't escape it again
+        // when serializing the functionResponse payload.
+        if (typeof toolResult === "string") {
+          try {
+            toolResult = JSON.parse(toolResult);
+          } catch {
+            // Not valid JSON (plain string from a tool) — wrap it in an object
+            toolResult = { output: toolResult };
+          }
         }
 
         toolResults.push({

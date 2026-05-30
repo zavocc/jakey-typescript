@@ -7,7 +7,7 @@ import { join } from "node:path";
 import { pipeline } from "node:stream/promises";
 import { Readable } from "node:stream";
 
-const childLogger = logger.child({ module: "llm.fileUpload" });
+const childLogger = logger.child({ module: "llm.providers.google.fileUpload" });
 
 export async function uploadToGoogleFilesAPI(fileName: string, mimeType: string, fileURL: string): Promise<string> {
   // Create a temporary directory for the download
