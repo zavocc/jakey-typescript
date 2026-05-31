@@ -11,13 +11,15 @@ type ToolHandler = (discord_interaction: Message | undefined, params: Record<str
 type ToolPack = {
   schemas: unknown[];
   functions: Record<string, ToolHandler>;
+  hasServerTools: boolean;
+  agentProviderExclusive?: string;
 };
 
 /**
  * Scans a directory for tool subdirectories, dynamically imports each `index.js`,
  * and collects `TOOL_SCHEMAS` arrays and exported functions.
  */
-async function loadBuiltInToolDirectory(dirUrl: URL): Promise<ToolPack> {
+async function loadBuiltInToolDirectory(dirUrl: URL) {
   const dirPath = fileURLToPath(dirUrl);
   const entries = await readdir(dirPath, { withFileTypes: true });
   const toolDirectories = entries
@@ -67,49 +69,80 @@ export async function fetchToolPack(selectedTool: string): Promise<ToolPack> {
   // Always load built-in tools
   const builtInToolPack = await loadBuiltInToolDirectory(new URL("./builtins/", import.meta.url));
 
-  const allSchemas: unknown[] = [...builtInToolPack.schemas];
-  const allTools: Record<string, ToolHandler> = { ...builtInToolPack.functions };
+  // Import togglable module name
+  const togglableModule = await import(`./togglables/${selectedTool}/index.js`);
+
+  // Check for server tools
+  let hasServerTools = false;
+
+  let allSchemas: unknown[] = [...builtInToolPack.schemas];
+  let allTools: Record<string, ToolHandler> = { ...builtInToolPack.functions };
 
   // Load togglable tool if selected
   if (selectedTool !== "Disabled") {
     try {
-      const togglableModule = await import(`./togglables/${selectedTool}/index.js`);
-
-      // Togglables require both TOOL_SCHEMAS and TOOL_HUMAN_NAME
-      if (!Array.isArray(togglableModule.TOOL_SCHEMAS)) {
-        childLogger.warn({ selected_tool: selectedTool }, "The selected tool does not export TOOL_SCHEMAS array, skipping...");
-        return { schemas: allSchemas, functions: allTools };
-      }
-
       if (!togglableModule.TOOL_HUMAN_NAME) {
         childLogger.warn({ selected_tool: selectedTool }, "The selected tool does not have TOOL_HUMAN_NAME, skipping...");
-        return { schemas: allSchemas, functions: allTools };
+        return { schemas: allSchemas, functions: allTools, hasServerTools: hasServerTools };
       }
 
-      // Add schemas
-      for (const _sel_schema of togglableModule.TOOL_SCHEMAS) {
-        allSchemas.push(_sel_schema);
-
-        // Warn if a function schema has no matching function export
-        if (isFunctionToolSchema(_sel_schema) && typeof togglableModule[_sel_schema.name] !== "function") {
-          childLogger.warn({ selected_tool: selectedTool, tool_name: _sel_schema.name }, "Selected tool exports a schema without a matching function.");
+      // Togglables require both TOOL_SCHEMAS and TOOL_HUMAN_NAME
+      if (Array.isArray(togglableModule.TOOL_SCHEMAS)) {
+        // Server tools must disable builtin tools — mixed mode is not supported
+        // This is cleaner and potentially future proof rather than relying solely on TOOL_SERVER_TOOL
+        // But requires to be manually set for server tools
+        if (togglableModule.TOOL_SERVER_TOOL && !togglableModule.TOOL_DISABLE_BUILTIN_TOOLS) {
+          throw new Error("The selected tool is a server tool but does not disable builtin tools. Set TOOL_DISABLE_BUILTIN_TOOLS = true.");
         }
-      }
 
-      // Collect exported functions
-      for (const [exportName, value] of Object.entries(togglableModule)) {
-        if (typeof value === "function") {
-          allTools[exportName] = value as ToolHandler;
+        // If the togglable tool disables builtin tools, clear all preloaded schemas and functions
+        if (togglableModule.TOOL_DISABLE_BUILTIN_TOOLS) {
+          childLogger.info({ selected_tool: selectedTool }, "The selected tool disables builtin tools, clearing builtin schemas and functions.");
+          allSchemas = [];
+          allTools = {};
         }
+
+        // Add togglable tool schemas
+        for (const _sel_schema of togglableModule.TOOL_SCHEMAS) {
+          allSchemas.push(_sel_schema);
+
+          // Warn if a function schema has no matching function export, we check if it's a standard custom function call schema
+          if (isFunctionToolSchema(_sel_schema)) {
+            if (typeof togglableModule[_sel_schema.name] !== "function") {
+              childLogger.warn({ selected_tool: selectedTool, tool_name: _sel_schema.name }, "Selected tool exports a schema without a matching function.");
+            }
+          }
+        }
+
+        // Collect exported functions only if this is not a server-side tool
+        if (togglableModule.TOOL_SERVER_TOOL) {
+          // We indicate to agent that we only use their own server tools
+          hasServerTools = true;
+        } else {
+          childLogger.info({ selected_tool: selectedTool }, "The selected tool is a client tool... importing functions");
+          for (const [exportName, value] of Object.entries(togglableModule)) {
+            if (typeof value === "function") {
+              allTools[exportName] = value as ToolHandler;
+            }
+          }
+        }
+
+      // Skip if TOOL_SCHEMAS is not exported
+      } else {
+        childLogger.warn({ selected_tool: selectedTool }, "The selected tool does not export TOOL_SCHEMAS array, skipping...");
+        return { schemas: allSchemas, functions: allTools, hasServerTools: hasServerTools };
       }
     } catch (error) {
       childLogger.error({ selected_tool: selectedTool, cause: error }, "Failed to load togglable tool.");
+      throw error;
     }
   }
 
   return {
     schemas: allSchemas,
     functions: allTools,
+    hasServerTools: hasServerTools,
+    agentProviderExclusive: togglableModule?.TOOL_AGENT_PROVIDER_EXCLUSIVE ?? undefined
   };
 }
 

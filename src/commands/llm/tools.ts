@@ -7,6 +7,7 @@ import {
   SlashCommandSubcommandBuilder,
 } from "discord.js";
 import { fetchListAvailableTool } from "../../llm/tools/utils.js";
+import { clearContext } from "../../llm/chat/contextMemory.js";
 import { savePreferences } from "../../lib/preferencesDBLoader.js";
 
 const childLogger = logger.child({ module: "commands.llm.tools" });
@@ -64,8 +65,11 @@ export default {
       const selectedToolInfo = availableTools.find((tool) => tool.name === selectedTool);
       const selectedToolHumanName = selectedToolInfo?.human_name ?? selectedTool;
 
-      await savePreferences(interaction.user.id, "current_interaction_id", null);
+      // Save user choice tool preference
       await savePreferences(interaction.user.id, "user_choice_tool", selectedTool);
+
+      // Delete chat history
+      await clearContext(interaction.user.id);
 
       // Done
       childLogger.info({ tool_set: selectedTool, user_snowflake: interaction.user.id }, "Selected tool for the user");

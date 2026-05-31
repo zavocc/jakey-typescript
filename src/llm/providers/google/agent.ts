@@ -14,6 +14,7 @@ import type { GenerateContentConfig, FunctionDeclaration, Part } from "@google/g
 
 // Tool loader
 import { fetchToolPack } from "../../tools/utils.js";
+import { ToolUnion } from "@google/genai/web";
 
 const childLogger = logger.child({ module: "llm.providers.google.agent" });
 
@@ -54,12 +55,25 @@ export async function llmExecute(
   const toolSelection = await loadPreferences(discord_user_id, "user_choice_tool");
   const loadedToolPack = await fetchToolPack(toolSelection ?? "Disabled"); // This returns both schema list and functions list in a pack
 
+  // check for agentProviderExclusive
+  if (loadedToolPack.agentProviderExclusive && loadedToolPack.agentProviderExclusive !== model_props.provider) {
+    throw new Error(`The tool ${toolSelection} is exclusive to ${loadedToolPack.agentProviderExclusive} provider.`);
+  }
+
   // Tools
   if (model_props.enable_tools) {
-    additionalParams = {
-      ...additionalParams,
-      tools: [{ functionDeclarations: loadedToolPack.schemas as FunctionDeclaration[] }],
-    };
+    // check if loadedToolPack has builtIns
+    if (!loadedToolPack.hasServerTools) {
+      additionalParams = {
+        ...additionalParams,
+        tools: [{ functionDeclarations: loadedToolPack.schemas as FunctionDeclaration[] }],
+      };
+    } else {
+      additionalParams = {
+        ...additionalParams,
+        tools: loadedToolPack.schemas as ToolUnion[],
+      };
+    }
   }
 
   // Generate content
@@ -107,22 +121,36 @@ export async function llmExecute(
 
       // URL context
       if (firstCandidate.urlContextMetadata && firstCandidate.urlContextMetadata.urlMetadata) {
-        await messageChannel.send(`-# > Used: Read ${firstCandidate.urlContextMetadata.urlMetadata.length} URLs`);
+        for (const metadata of firstCandidate.urlContextMetadata.urlMetadata) {
+          if (metadata.retrievedUrl) {
+            citations.push({
+              title: new URL(metadata.retrievedUrl).hostname,
+              url: metadata.retrievedUrl
+            });
+          }
+        }
       }
 
       // Web citations
       if (firstCandidate.groundingMetadata?.groundingChunks) {
         for (const chunk of firstCandidate.groundingMetadata.groundingChunks) {
-          if (chunk.web) {
+          if (chunk.web && chunk.web.title && chunk.web.uri) {
             citations.push({
-              title: chunk.web.title ?? "Source",
-              url: chunk.web.uri ?? `https://google.com/q=${encodeURIComponent(chunk.web.title ?? "Source")}`
+              title: chunk.web.title,
+              url: chunk.web.uri
+            });
+          } else if (chunk.maps && chunk.maps.title && chunk.maps.uri) {
+            citations.push({
+              title: chunk.maps.title,
+              url: chunk.maps.uri
             });
           } else if (chunk.retrievedContext) {
-            citations.push({
-              title: chunk.retrievedContext.title ?? "Source",
-              url: chunk.retrievedContext.uri ?? `https://google.com/q=${encodeURIComponent(chunk.retrievedContext.title ?? "Source")}`
-            });
+            if (chunk.retrievedContext.title && chunk.retrievedContext.uri) {
+              citations.push({
+                title: chunk.retrievedContext.title,
+                url: chunk.retrievedContext.uri
+              });
+            }
           }
         }
       }

@@ -1,11 +1,9 @@
 import type { Message, SendableChannels } from "discord.js";
 
-export type FunctionToolSchema = {
+export function isFunctionToolSchema(value: unknown): value is {
   type: "function";
   name: string;
-};
-
-export function isFunctionToolSchema(value: unknown): value is FunctionToolSchema {
+} {
   return (
     // check if value is an object and has type and name properties, and type is "function" and name is a string
     typeof value === "object" &&
