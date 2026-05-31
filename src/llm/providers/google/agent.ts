@@ -94,7 +94,7 @@ export async function llmExecute(
   while (!toolHasDone) {
     // Collect tool results including those that ran in parallel before sending
     let hasToolCalls = false;
-    const toolResults = [];
+    const toolResponseResultsParts = [];
 
     // Process ALL parts from the response first before we check if we have tool calls and results in line 231
     for (const parts of firstCandidate.content.parts) {
@@ -132,7 +132,7 @@ export async function llmExecute(
         await sendChunkedMessage(messageChannel, parts.text);
       }
 
-      // tool calls
+      // function user defined tool calls
       if (parts.functionCall && parts.functionCall.name) {
         hasToolCalls = true;
         let toolResult;
@@ -228,7 +228,7 @@ export async function llmExecute(
           }
         }
 
-        toolResults.push({
+        toolResponseResultsParts.push({
           functionResponse: {
             name: parts.functionCall.name,
             id: parts.functionCall.id,
@@ -249,7 +249,7 @@ export async function llmExecute(
 
       // Push all collected tool results to context once
       chatContext.push({
-        parts: toolResults,
+        parts: toolResponseResultsParts,
         role: "user",
       });
 
