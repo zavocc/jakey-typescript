@@ -49,7 +49,8 @@
                 "maxOutputTokens": 3024,
                 "thinkingConfig": {
                     "thinkingLevel": "low"
-                }
+                },
+                "mediaResolution": "MEDIA_RESOLUTION_LOW"
             }
         },
         {
