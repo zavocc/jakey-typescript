@@ -70,7 +70,7 @@ export async function fetchToolPack(selectedTool: string): Promise<ToolPack> {
   const builtInToolPack = await loadBuiltInToolDirectory(new URL("./builtins/", import.meta.url));
 
   // Import togglable module name
-  const togglableModule = await import(`./togglables/${selectedTool}/index.js`);
+  let togglableModule;
 
   // Check for server tools
   let hasServerTools = false;
@@ -80,6 +80,7 @@ export async function fetchToolPack(selectedTool: string): Promise<ToolPack> {
 
   // Load togglable tool if selected
   if (selectedTool !== "Disabled") {
+    togglableModule = await import(`./togglables/${selectedTool}/index.js`);
     try {
       if (!togglableModule.TOOL_HUMAN_NAME) {
         childLogger.warn({ selected_tool: selectedTool }, "The selected tool does not have TOOL_HUMAN_NAME, skipping...");
