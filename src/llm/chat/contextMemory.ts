@@ -23,7 +23,7 @@ export async function loadContext(userId: string, threadName?: string) {
   }
 }
 
-export async function saveContext(userId: string, context: Array<Record<string, unknown>>, threadName?: string): Promise<void> {
+export async function saveContext(userId: string, context: Array<unknown>, threadName?: string): Promise<void> {
   try {
     const collection = await getContextCollection();
     await collection.updateOne(

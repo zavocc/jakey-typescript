@@ -7,7 +7,7 @@ import { text_chat_completion } from "./generateContent.js";
 import { loadPreferences } from "../../../lib/preferencesDBLoader.js";
 import { isSupportableCitations, linkBtnAggregator, queryBtnAggregator, sendBtns } from "../../chat/btnCitationSend.js";
 import type { SupportableCitation } from "../../chat/btnCitationSend.js";
-import type { FileMetadata } from "./types.js";
+import type { FileMetadata } from "../../types.js";
 import type { Message, SendableChannels } from 'discord.js';
 import type { ModelProps } from "../../../types/schemas.js";
 import type { GenerateContentConfig, FunctionDeclaration, Part } from "@google/genai";
@@ -32,7 +32,7 @@ export async function llmExecute(
   }
 
   // Load context and it's associated thread if existed
-  const chatContext: Array<{parts: Part[], role: string}> = await loadContext(discord_user_id, model_props.thread_name);
+  const chatContext: Array<{parts: Array<Part>, role: string}> = await loadContext(discord_user_id, model_props.thread_name);
 
   // Check if we have attachments but the model doesn't support it
   if (attachment_urls && attachment_urls.length > 0 && !model_props.enable_files) {
@@ -77,7 +77,6 @@ export async function llmExecute(
   }
 
   // Generate content
-  let toolHasDone = false;
   let response = await text_chat_completion(
     model_props.model_id,
     chatContext,
@@ -105,6 +104,7 @@ export async function llmExecute(
   // Handle responses and agentic loop inside of this toolHasDone loop, and we display each response modalities one by one
   const toolCallHardLimit = parseInt(process.env.TOOL_CALL_TURNS_HARD_LIMIT ?? '10');
   let toolCallTurnCount = 0;
+  let toolHasDone = false;
   while (!toolHasDone) {
     // Collect tool results including those that ran in parallel before sending
     let hasToolCalls = false;

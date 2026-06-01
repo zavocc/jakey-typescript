@@ -65,7 +65,7 @@ async function loadBuiltInToolDirectory(dirUrl: URL) {
   return { schemas, functions };
 }
 
-export async function fetchToolPack(selectedTool: string): Promise<ToolPack> {
+export async function fetchToolPack(selectedTool: string, formatSchema?: "openai" | "google"): Promise<ToolPack> {
   // Always load built-in tools
   const builtInToolPack = await loadBuiltInToolDirectory(new URL("./builtins/", import.meta.url));
 
@@ -75,7 +75,13 @@ export async function fetchToolPack(selectedTool: string): Promise<ToolPack> {
   // Check for server tools
   let hasServerTools = false;
 
-  let allSchemas: unknown[] = [...builtInToolPack.schemas];
+  let allSchemas: unknown[];
+  if (formatSchema === "openai") {
+    allSchemas = builtInToolPack.schemas.map((s) => ({ type: "function", function: s }));
+  } else {
+    allSchemas = [...builtInToolPack.schemas];
+  }
+
   let allTools: Record<string, ToolHandler> = { ...builtInToolPack.functions };
 
   // Load togglable tool if selected
@@ -105,8 +111,11 @@ export async function fetchToolPack(selectedTool: string): Promise<ToolPack> {
 
         // Add togglable tool schemas
         for (const _sel_schema of togglableModule.TOOL_SCHEMAS) {
-          allSchemas.push(_sel_schema);
-
+          if (formatSchema === "openai") {
+            allSchemas.push({ type: "function", function: _sel_schema });
+          } else {
+            allSchemas.push(_sel_schema);
+          }
           // Warn if a function schema has no matching function export, we check if it's a standard custom function call schema
           if (isFunctionToolSchema(_sel_schema)) {
             if (typeof togglableModule[_sel_schema.name] !== "function") {

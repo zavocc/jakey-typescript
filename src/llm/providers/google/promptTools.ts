@@ -1,8 +1,9 @@
 import { uploadToGoogleFilesAPI } from './fileUpload.js';
-import type { FileMetadata } from './types.js';
+import type { FileMetadata } from '../../types.js';
+import type { Part } from "@google/genai";
 
 export async function constructUserPrompt(prompt: string, attachment_urls?: Array<FileMetadata>) {
-  const contentPartsArray = [];
+  const contentPartsArray: Array<Part> = [];
 
   // Check if we have attachments and detect their media type via HEAD request
   // So we can push it as part of the prompt content pieces with the correct type

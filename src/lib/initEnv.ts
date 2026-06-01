@@ -5,10 +5,9 @@ config();
 const requiredRtVariables = [
   "DISCORD_TOKEN",
   "DISCORD_APP_ID",
-  "GEMINI_API_KEY",
   "MONGODB_URI",
   "MONGODB_DB_NAME",
-  "TAVILY_API_KEY",
+  "TAVILY_API_KEY"
 ];
 
 for (const variable of requiredRtVariables) {
