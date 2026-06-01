@@ -3,6 +3,7 @@ import { loadPreferences } from "../lib/preferencesDBLoader.js";
 import { Events, Message } from "discord.js";
 import { pullAgent, type LLMExecuteFn } from "../llm/agentLoader.js";
 import { getModelProps } from "../llm/chat/modelsSelection.js";
+import { AgentProviderExclusiveError } from "../llm/tools/agentProviderExclusive.js";
 import type { FileMetadata } from "../llm/types.js";
 import type { ModelProps } from "../types/schemas.js";
 
@@ -56,7 +57,9 @@ export default {
         await agentSdkProvider(strippedContent, modelProps, userId, message, attachmentUrls);
       } catch (error) {
         // narrows to Error type
-        if (error instanceof Error && error.message.includes("does not support file attachments")) {
+        if (error instanceof AgentProviderExclusiveError) {
+          await textChannel.send(error.userMessage);
+        } else if (error instanceof Error && error.message.includes("does not support file attachments")) {
           await textChannel.send(error.message);
         } else if (error instanceof Error && error.message.includes("Model unavailable")) {
           const modelUsed = await loadPreferences(userId, "user_choice_model_alias")

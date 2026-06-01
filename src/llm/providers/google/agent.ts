@@ -6,6 +6,7 @@ import { JAKEY_SYSTEM_PROMPT } from "../../../data/sysprompts.js";
 import { text_chat_completion } from "./generateContent.js";
 import { loadPreferences } from "../../../lib/preferencesDBLoader.js";
 import { isSupportableCitations, linkBtnAggregator, queryBtnAggregator, sendBtns } from "../../chat/btnCitationSend.js";
+import { assertAgentProviderExclusive } from "../../tools/agentProviderExclusive.js";
 import type { SupportableCitation } from "../../chat/btnCitationSend.js";
 import type { FileMetadata } from "../../types.js";
 import type { Message, SendableChannels } from 'discord.js';
@@ -55,10 +56,7 @@ export async function llmExecute(
   const toolSelection = await loadPreferences(discord_user_id, "user_choice_tool");
   const loadedToolPack = await fetchToolPack(toolSelection ?? "Disabled"); // This returns both schema list and functions list in a pack
 
-  // check for agentProviderExclusive
-  if (loadedToolPack.agentProviderExclusive && loadedToolPack.agentProviderExclusive !== model_props.provider) {
-    throw new Error(`The tool ${toolSelection} is exclusive to ${loadedToolPack.agentProviderExclusive} provider.`);
-  }
+  assertAgentProviderExclusive(toolSelection, loadedToolPack.agentProviderExclusive, model_props.provider);
 
   // Tools
   if (model_props.enable_tools) {
