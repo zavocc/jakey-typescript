@@ -1,12 +1,6 @@
 import logger from "../pinoLogger.js";
 import crypto from "node:crypto";
 import { filesAdapter } from "./index.js";
-import { tmpdir } from "node:os";
-import { mkdtemp, rm } from "node:fs/promises";
-import { createWriteStream } from "node:fs";
-import { join } from "node:path";
-import { pipeline } from "node:stream/promises";
-import { Readable } from "node:stream";
 
 const childLogger = logger.child({ module: "lib.files.fileUpload" });
 
@@ -17,15 +11,10 @@ if (process.env.BUCKET_ROOT) {
 }
 
 export async function uploadFile(fileName: string, mimeType: string, fileURL: string): Promise<string> {
-  // Create a temporary directory for the download
-  const tempDir = await mkdtemp(join(tmpdir(), "jkey-download-"));
-  const outputFile = join(tempDir, fileName);
   const finalFileName = bucketRoot + `${crypto.randomUUID()}.${fileName}`;
 
-  // Download the file to outputFile
   const response = await fetch(fileURL);
 
-  // Check
   if (!response.ok) {
     throw new Error(`Failed to download file: ${response.statusText}`);
   }
@@ -34,18 +23,12 @@ export async function uploadFile(fileName: string, mimeType: string, fileURL: st
     throw new Error("No response body");
   }
 
-  // Chunk download for efficiency
-  await pipeline(Readable.from(response.body), createWriteStream(outputFile));
-
-  // Then we upload the file to Google service
   try {
-    await filesAdapter.upload(finalFileName, outputFile, {
+    await filesAdapter.upload(finalFileName, response.body, {
       contentType: mimeType
     });
   } catch (error) {
     throw new Error(`Failed to upload file ${fileName} with cause: ${error}`, { cause: error });
-  } finally {
-    await rm(tempDir, { recursive: true, force: true });
   }
   childLogger.info({ file_uploaded: fileName, hashed_filename: finalFileName }, "Uploaded file...")
 
