@@ -102,6 +102,12 @@ export async function llmExecute(
 
     if (firstCandidate.message.tool_calls) {
       hasToolCalls = true;
+
+      // Output message preamble
+      if (firstCandidate.message.content) {
+        await sendChunkedMessage(messageChannel, firstCandidate.message.content)
+      }
+
       // For each tool call, execute and append the result to the context
       for (const toolCall of firstCandidate.message.tool_calls) {
         // Only function-type tool calls are supported
@@ -126,9 +132,9 @@ export async function llmExecute(
 
             if (isSupportableCitations(sources)) {
               citations.push(...sources);
-              childLogger.debug({ tool_name: toolCall.function.name, supportable_sources: sources }, "Found valid supportable_sources for sources to be cited");
+              childLogger.debug({ supportable_sources: sources, tool_name: toolCall.function.name, }, "Found valid supportable_sources for sources to be cited");
             } else {
-              childLogger.debug({ tool_name: toolCall.function.name, supportable_sources: sources }, "Found supportable_sources but the format is not valid... ignoring.");
+              childLogger.debug({ supportable_sources: sources, tool_name: toolCall.function.name, }, "Found supportable_sources but the format is not valid... ignoring.");
             }
 
             // Then we remove supportable_sources key from toolResult so it doesn't get returned to the model
