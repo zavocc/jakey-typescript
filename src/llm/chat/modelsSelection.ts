@@ -12,7 +12,7 @@ type ModelPropsType = z.infer<typeof ModelPropsSchema>;
 type ModelsFile = z.infer<typeof ModelsFileSchema>;
 
 export async function loadModelsFile(): Promise<ModelsFile> {
-  const modelsPath = path.resolve(process.cwd(), "src", "models.json");
+  const modelsPath = path.resolve(process.cwd(), "src", "data", "models.json");
   const raw = await readFile(modelsPath, "utf-8");
   return ModelsFileSchema.parse(JSON.parse(raw));
 }
