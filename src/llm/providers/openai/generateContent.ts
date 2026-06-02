@@ -17,8 +17,7 @@ export async function text_chat_completion(
     model: model,
     messages: context,
     stream: false,
-    temperature: undefined,
-    top_p: undefined
+    temperature: 1
   })
 
   // We cannot receive null output so we throw if it is null
