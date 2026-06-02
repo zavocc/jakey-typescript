@@ -32,7 +32,8 @@ export async function llmExecute(
   }
 
   // Load context and it's associated thread if existed
-  const chatContext: Array<ChatCompletionMessageParam> = await loadContext(discord_user_id, model_props.thread_name ?? model_props.provider);
+  const contextThreadName = model_props.thread_name ?? model_props.provider;
+  const chatContext: Array<ChatCompletionMessageParam> = await loadContext(discord_user_id, contextThreadName);
 
   // If the context is empty, append system prompt to the context
   if (chatContext.length === 0) {
@@ -250,7 +251,7 @@ export async function llmExecute(
   chatContext.push(firstCandidate.message);
 
   // Save context back to db
-  await saveContext(discord_user_id, chatContext, model_props.thread_name);
+  await saveContext(discord_user_id, chatContext, contextThreadName);
 
 
   // Reply to user

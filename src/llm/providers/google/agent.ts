@@ -33,7 +33,8 @@ export async function llmExecute(
   }
 
   // Load context and it's associated thread if existed
-  const chatContext: Array<{parts: Array<Part>, role: string}> = await loadContext(discord_user_id, model_props.thread_name ?? model_props.provider);
+  const contextThreadName = model_props.thread_name ?? model_props.provider;
+  const chatContext: Array<{parts: Array<Part>, role: string}> = await loadContext(discord_user_id, contextThreadName);
 
   // Check if we have attachments but the model doesn't support it
   if (attachment_urls && attachment_urls.length > 0 && !model_props.enable_files) {
@@ -314,7 +315,7 @@ export async function llmExecute(
   });
 
   // Save context back to db
-  await saveContext(discord_user_id, chatContext, model_props.thread_name);
+  await saveContext(discord_user_id, chatContext, contextThreadName);
 
   // Send citations and queries as buttons
   await sendBtns(messageChannel, queryBtnAggregator(queries), linkBtnAggregator(citations));
