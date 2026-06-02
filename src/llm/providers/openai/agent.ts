@@ -93,8 +93,8 @@ export async function llmExecute(
   const queries: Array<string> = [];
 
   // Handle responses and agentic loop inside of this toolHasDone loop, and we display each response modalities one by one
-  // const toolCallHardLimit = parseInt(process.env.TOOL_CALL_TURNS_HARD_LIMIT ?? '10');
-  // let toolCallTurnCount = 0;
+  const toolCallHardLimit = parseInt(process.env.TOOL_CALL_TURNS_HARD_LIMIT ?? '10');
+  let toolCallTurnCount = 0;
   let toolHasDone = false;
   while (!toolHasDone) {
     let hasToolCalls = false;
@@ -115,63 +115,100 @@ export async function llmExecute(
           throw Error(`Unsupported tool call type: ${toolCall.type}`);
         }
 
-        let parsedToolResult;
+        let parsedToolResult: unknown;
         const toolName = toolCall.function.name;
+        let schemaHasFound = false;
+
+        // Check if the tool.name is in the schemas so hallucinated or unauthorized functions cannot be called
+        for (const schema of loadedToolPack.schemas) {
+          if (typeof schema !== "object" || schema === null) {
+            continue;
+          }
+
+          const maybeTool = schema as { type?: unknown; function?: unknown };
+          if (maybeTool.type !== "function" || typeof maybeTool.function !== "object" || maybeTool.function === null) {
+            continue;
+          }
+
+          const maybeFunction = maybeTool.function as { name?: unknown };
+          if (maybeFunction.name === toolName) {
+            schemaHasFound = true;
+            break;
+          }
+        }
+
         const toolFunction = loadedToolPack.functions[toolName as keyof typeof loadedToolPack.functions];
 
-        // Log tools used
-        childLogger.info({ tool_invoked: toolCall.function.name, tool_id: toolCall.id, user_snowflake: discord_interaction.author.id }, "User LLM called tool")
-        childLogger.debug({ tool_name: toolCall.function.name, tool_arguments: toolCall.function.arguments, tool_id: toolCall.id, user_snowflake: discord_interaction.author.id }, "Arg tool")
+        if (schemaHasFound && Object.hasOwn(loadedToolPack.functions, toolName) && typeof toolFunction === "function") {
+          // Log tools used
+          childLogger.info({ tool_invoked: toolName, tool_id: toolCall.id, user_snowflake: discord_interaction.author.id }, "User LLM called tool")
+          childLogger.debug({ tool_name: toolName, tool_arguments: toolCall.function.arguments, tool_id: toolCall.id, user_snowflake: discord_interaction.author.id }, "Arg tool")
 
-        try {
-          const toolResult = await toolFunction(discord_interaction, JSON.parse(toolCall.function.arguments) ?? {});
-
-          // Check if toolResult includes supportable sources that can be added to the citations list.
-          if (typeof toolResult === "object" && toolResult !== null && Object.hasOwn(toolResult, "supportable_sources")) {
-            const sources = (toolResult as Record<string, unknown>).supportable_sources;
-
-            if (isSupportableCitations(sources)) {
-              citations.push(...sources);
-              childLogger.debug({ supportable_sources: sources, tool_name: toolCall.function.name, }, "Found valid supportable_sources for sources to be cited");
+          try {
+            if (toolCallTurnCount >= toolCallHardLimit) {
+              parsedToolResult = { error: "Reached tool call hard limit. Please try again later." };
+              logger.error({ tool_name: toolName, tool_id: toolCall.id, user_snowflake: discord_interaction.author.id }, "Max tool calls limit reached")
             } else {
-              childLogger.debug({ supportable_sources: sources, tool_name: toolCall.function.name, }, "Found supportable_sources but the format is not valid... ignoring.");
+              const toolResult = await toolFunction(discord_interaction, JSON.parse(toolCall.function.arguments) ?? {});
+
+              // Check if toolResult includes supportable sources that can be added to the citations list.
+              if (typeof toolResult === "object" && toolResult !== null && Object.hasOwn(toolResult, "supportable_sources")) {
+                const sources = (toolResult as Record<string, unknown>).supportable_sources;
+
+                if (isSupportableCitations(sources)) {
+                  citations.push(...sources);
+                  childLogger.debug({ supportable_sources: sources, tool_name: toolName, }, "Found valid supportable_sources for sources to be cited");
+                } else {
+                  childLogger.debug({ supportable_sources: sources, tool_name: toolName, }, "Found supportable_sources but the format is not valid... ignoring.");
+                }
+
+                // Then we remove supportable_sources key from toolResult so it doesn't get returned to the model
+                delete (toolResult as Record<string, unknown>).supportable_sources;
+              }
+
+              // Assign the tool result to parsedToolResult
+              if (toolResult === undefined || toolResult === null) {
+                // If the function returns void or undefined, we tell the model it doesn't return anything
+                childLogger.info({ tool_name: toolName, tool_id: toolCall.id }, "The tool did not return a result")
+                parsedToolResult = { output: `The tool ${toolName} did not return a result` };
+              } else if (typeof toolResult === "bigint") {
+                // Check if it directly returns bigInt, NOTE: any nested objects that has bigInt may fail and this check may not cover it
+                childLogger.info({ tool_name: toolName, tool_id: toolCall.id }, "Possible direct bigint returned, safely converting to string...")
+                parsedToolResult = { output: `${toolResult}` };
+              } else {
+                parsedToolResult = toolResult;
+              }
+
+              logger.debug({ tool_result: toolResult, tool_name: toolName, tool_id: toolCall.id, user_snowflake: discord_interaction.author.id }, "Tool result")
             }
-
-            // Then we remove supportable_sources key from toolResult so it doesn't get returned to the model
-            delete (toolResult as Record<string, unknown>).supportable_sources;
+          } catch (error) {
+            const errorMessage = error instanceof Error ? error.message : String(error);
+            childLogger.error({
+              tool_name: toolName,
+              tool_error: errorMessage,
+              user_snowflake: discord_interaction.author.id,
+            }, "Error calling tool");
+            parsedToolResult = { error: `Failed to execute tool ${toolName}`, reason: errorMessage };
+          } finally {
+            // Increment tool call turn counter
+            toolCallTurnCount += 1;
           }
-
-          // Assign the tool result to parsedToolResult
-          if (toolResult === undefined || toolResult === null) {
-            // If the function returns void or undefined, we tell the model it doesn't return anything
-            childLogger.info({ tool_name: toolCall.function.name, tool_id: toolCall.id }, "The tool did not return a result")
-            parsedToolResult = { output: `The tool ${toolCall.function.name} did not return a result` };
-          } else if (typeof toolResult === "bigint") {
-            // Check if it directly returns bigInt, NOTE: any nested objects that has bigInt may fail and this check may not cover it
-            childLogger.info({ tool_name: toolCall.function.name, tool_id: toolCall.id }, "Possible direct bigint returned, safely converting to string...")
-            parsedToolResult = { output: `${toolResult}` };
-          } else {
-            parsedToolResult = toolResult;
-          }
-
-          logger.debug({ tool_result: toolResult, tool_name: toolCall.function.name, tool_id: toolCall.id, user_snowflake: discord_interaction.author.id }, "Tool result")
-        } catch (error) {
-          const errorMessage = error instanceof Error ? error.message : String(error);
-          childLogger.error({
-            tool_name: toolCall.function.name,
-            tool_error: errorMessage,
-            user_snowflake: discord_interaction.author.id,
-          }, "Error calling tool");
-          parsedToolResult = { error: `Failed to execute tool ${toolCall.function.name}`, reason: errorMessage };
-        } finally {
-          toolResponseResultsParts.push(
-            {
-              role: "tool",
-              tool_call_id: toolCall.id,
-              content: JSON.stringify(parsedToolResult)
-            }
-          )
+        } else {
+          logger.error({ tool_name: toolName, schema_found: schemaHasFound, user_snowflake: discord_interaction.author.id }, "Attempted to call tool but is not available")
+          parsedToolResult = {
+            error: schemaHasFound
+              ? `Tool ${toolName} is not available in the registered functions.`
+              : `Function ${toolName} is not registered in the available tool schemas.`,
+          };
         }
+
+        toolResponseResultsParts.push(
+          {
+            role: "tool",
+            tool_call_id: toolCall.id,
+            content: JSON.stringify(parsedToolResult)
+          }
+        )
       }
     }
 
