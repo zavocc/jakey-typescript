@@ -4,15 +4,9 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 import logger from "../lib/pinoLogger.js";
 import type { Message } from "discord.js";
 import type { ModelProps } from "../types/schemas.js";
+import type { FileMetadata } from "./types.js";
 
 const childLogger = logger.child({ module: "llm.agentLoader" });
-
-export interface FileMetadata {
-  fileName: string;
-  mimeType: string;
-  fileURI: string;
-  AltText: string | null;
-}
 
 export type LLMExecuteFn = (
   prompt: string,
