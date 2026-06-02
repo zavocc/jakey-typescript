@@ -1,4 +1,4 @@
-import { uploadFile } from '../../../lib/files/fileUpload.js';
+import { uploadFileLLM } from '../../../lib/files/fileUpload.js';
 import type { FileMetadata } from '../../types.js';
 import type { ChatCompletionMessageParam } from 'openai/resources';
 
@@ -10,7 +10,7 @@ export async function constructUserPrompt(prompt: string, attachment_urls?: Arra
   if (attachment_urls && attachment_urls.length > 0) {
     const attachmentMessages = await Promise.all(
       attachment_urls.map(async (attachment) => {
-        const curURI = await uploadFile(attachment.fileName, attachment.mimeType, attachment.fileURI)
+        const curURI = await uploadFileLLM(attachment.fileName, attachment.mimeType, attachment.fileURI)
         const metastring = `File URL: ${attachment.fileURI}, File Name: ${attachment.fileName}, Alt Text: ${attachment.AltText ?? "No alt text"}, Mime Type: ${attachment.mimeType}`
 
         return {

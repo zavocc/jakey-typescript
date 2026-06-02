@@ -4,7 +4,7 @@ import { filesAdapter } from "./index.js";
 
 const childLogger = logger.child({ module: "lib.files.fileUpload" });
 
-export async function uploadFile(fileName: string, mimeType: string, fileURL: string): Promise<string> {
+export async function uploadFileLLM(fileName: string, mimeType: string, fileURL: string): Promise<string> {
   const finalFileName = `${crypto.randomUUID()}.${fileName}`;
 
   const response = await fetch(fileURL);
