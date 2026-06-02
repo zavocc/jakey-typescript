@@ -24,7 +24,7 @@ export async function uploadFileLLM(fileName: string, mimeType: string, fileURL:
   } catch (error) {
     throw new Error(`Failed to upload file ${fileName} with cause: ${error}`, { cause: error });
   }
-  childLogger.info({ file_uploaded: fileName, hashed_filename: finalFileName }, "Uploaded file...")
+  childLogger.info({ file_uploaded: fileName, hashed_filename: finalFileName }, "Uploaded file to configured storage")
 
   // Get file URI
   const fileURI = await filesAdapter.url(finalFileName)
