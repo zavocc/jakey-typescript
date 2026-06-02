@@ -1,5 +1,5 @@
 import { Events, Message } from "discord.js";
-import { HELP_MESSAGE } from "../data/constants.js";
+import { HELP_MESSAGE } from "../constants.js";
 
 export default {
   name: Events.MessageCreate,

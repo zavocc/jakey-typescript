@@ -4,7 +4,7 @@ import {
   MessageContextMenuCommandInteraction,
   MessageFlags,
 } from "discord.js";
-import { GEMINI_TEXT_TO_SPEECH_SYSTEM_PROMPT } from "../../../data/sysprompts.js";
+import { GEMINI_TEXT_TO_SPEECH_SYSTEM_PROMPT } from "../../../constants.js";
 import { GoogleClient } from "../../../lib/genAIClients.js";
 import WaveFile from "wavefile";
 

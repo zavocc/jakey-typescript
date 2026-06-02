@@ -2,7 +2,7 @@ import logger from "../../../lib/pinoLogger.js";
 import { sendChunkedMessage } from "../../chat/message.js";
 import { loadContext, saveContext } from "../../chat/contextMemory.js";
 import { constructUserPrompt } from "./promptTools.js";
-import { JAKEY_SYSTEM_PROMPT } from "../../../data/sysprompts.js";
+import { JAKEY_SYSTEM_PROMPT } from "../../../constants.js";
 import { text_chat_completion } from "./generateContent.js";
 import { loadPreferences } from "../../../lib/preferencesDBLoader.js";
 import { isSupportableCitations, linkBtnAggregator, queryBtnAggregator, sendBtns } from "../../chat/btnCitationSend.js";
