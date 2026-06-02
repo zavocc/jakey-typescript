@@ -32,7 +32,7 @@ export async function llmExecute(
   }
 
   // Load context and it's associated thread if existed
-  const chatContext: Array<ChatCompletionMessageParam> = await loadContext(discord_user_id, model_props.thread_name);
+  const chatContext: Array<ChatCompletionMessageParam> = await loadContext(discord_user_id, model_props.thread_name ?? model_props.provider);
 
   // If the context is empty, append system prompt to the context
   if (chatContext.length === 0) {

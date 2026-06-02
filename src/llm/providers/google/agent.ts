@@ -33,7 +33,7 @@ export async function llmExecute(
   }
 
   // Load context and it's associated thread if existed
-  const chatContext: Array<{parts: Array<Part>, role: string}> = await loadContext(discord_user_id, model_props.thread_name);
+  const chatContext: Array<{parts: Array<Part>, role: string}> = await loadContext(discord_user_id, model_props.thread_name ?? model_props.provider);
 
   // Check if we have attachments but the model doesn't support it
   if (attachment_urls && attachment_urls.length > 0 && !model_props.enable_files) {
