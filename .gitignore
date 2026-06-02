@@ -5,3 +5,4 @@ package-lock.json
 .codex
 .env.development
 .env
+files.config.json

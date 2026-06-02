@@ -4,14 +4,8 @@ import { filesAdapter } from "./index.js";
 
 const childLogger = logger.child({ module: "lib.files.fileUpload" });
 
-// check if BUCKET_ROOT exists
-let bucketRoot = "";
-if (process.env.BUCKET_ROOT) {
-  bucketRoot = process.env.BUCKET_ROOT.endsWith("/") ? process.env.BUCKET_ROOT : process.env.BUCKET_ROOT + "/";
-}
-
 export async function uploadFile(fileName: string, mimeType: string, fileURL: string): Promise<string> {
-  const finalFileName = bucketRoot + `${crypto.randomUUID()}.${fileName}`;
+  const finalFileName = `${crypto.randomUUID()}.${fileName}`;
 
   const response = await fetch(fileURL);
 

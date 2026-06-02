@@ -1,0 +1,7 @@
+{
+  "provider": "gcs",
+  "prefix": "optional_prefix",
+  "config": {
+    "bucket": "mysite-uploads"
+  }
+}
