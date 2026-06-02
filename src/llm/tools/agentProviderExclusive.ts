@@ -1,5 +1,5 @@
 export class AgentProviderExclusiveError extends Error {
-  public readonly userMessage = "The tool you selected is not available for this model. Switch to a different model or switch tools.";
+  public readonly message = "The tool you selected is not available for this model. Switch to a different model or switch tools.";
 
   public constructor(
     public readonly toolSelection: string,
