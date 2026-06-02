@@ -195,7 +195,7 @@ export async function llmExecute(
             toolCallTurnCount += 1;
           }
         } else {
-          childLogger.error({ tool_name: toolName, schema_found: schemaHasFound, user_snowflake: discord_interaction.author.id }, "Attempted to call tool but is not available")
+          childLogger.error({ schema_found: schemaHasFound, tool_name: toolName, user_snowflake: discord_interaction.author.id }, "Attempted to call tool but is not available")
           parsedToolResult = {
             error: schemaHasFound
               ? `Tool ${toolName} is not available in the registered functions.`
