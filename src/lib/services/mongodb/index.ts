@@ -1,11 +1,11 @@
-import logger from "../../pinoLogger.js";
+import { createModuleLogger } from "../../pinoLogger.js";
 import { MongoClient, type Db } from "mongodb";
 
 const client = new MongoClient(process.env.MONGODB_URI ?? "");
 const dbName = process.env.MONGODB_DB_NAME ?? "";
 let isConnected = false;
 
-const childLogger = logger.child({ module: "lib.services.mongodb" });
+const childLogger = createModuleLogger(import.meta.url);
 
 // connect to db
 export async function startDB(): Promise<void> {

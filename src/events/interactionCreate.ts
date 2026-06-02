@@ -1,7 +1,7 @@
-import logger from "../lib/pinoLogger.js";
+import { createModuleLogger } from "../lib/pinoLogger.js";
 import { Events, Interaction, MessageFlags } from "discord.js";
 
-const childLogger = logger.child({ module: "events.InteractionCreate" });
+const childLogger = createModuleLogger(import.meta.url);
 
 export default {
   name: Events.InteractionCreate,

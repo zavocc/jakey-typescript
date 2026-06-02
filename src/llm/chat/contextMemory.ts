@@ -1,10 +1,10 @@
 // functions to load and save to db
-import logger from "../../lib/pinoLogger.js";
+import { createModuleLogger } from "../../lib/pinoLogger.js";
 import { getDB } from "../../lib/services/mongodb/index.js";
 const MONGODB_COLLECTION_NAME = 'chat_contexts';
 const DEFAULT_THREAD_NAME = 'default';
 
-const childLogger = logger.child({ module: 'llm.chat.contextMemory' });
+const childLogger = createModuleLogger(import.meta.url);
 
 async function getContextCollection() {
   const db = await getDB();

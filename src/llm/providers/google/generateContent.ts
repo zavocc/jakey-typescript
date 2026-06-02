@@ -1,8 +1,8 @@
-import logger from '../../../lib/pinoLogger.js';
+import { createModuleLogger } from '../../../lib/pinoLogger.js';
 import { GoogleClient } from '../../../lib/genAIClients.js';
 import type { GenerateContentConfig, GenerateContentResponse, Part } from '@google/genai';
 
-const childLogger = logger.child({ module: 'llm.providers.google.generateContent' });
+const childLogger = createModuleLogger(import.meta.url);
 
 export async function text_chat_completion(
   model: string,

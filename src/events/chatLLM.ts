@@ -1,4 +1,4 @@
-import logger from "../lib/pinoLogger.js";
+import { createModuleLogger } from "../lib/pinoLogger.js";
 import { loadPreferences } from "../lib/preferencesDBLoader.js";
 import { Events, Message } from "discord.js";
 import { pullAgent, type LLMExecuteFn } from "../llm/agentLoader.js";
@@ -7,7 +7,7 @@ import { AgentProviderExclusiveError } from "../llm/tools/agentProviderExclusive
 import type { FileMetadata } from "../llm/types.js";
 import type { ModelProps } from "../types/schemas.js";
 
-const childLogger = logger.child({ module: "events.chatLLM" });
+const childLogger = createModuleLogger(import.meta.url);
 
 export default {
   name: Events.MessageCreate,

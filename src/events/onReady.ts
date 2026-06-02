@@ -1,7 +1,7 @@
-import logger from "../lib/pinoLogger.js";
+import { createModuleLogger } from "../lib/pinoLogger.js";
 import { ActivityType, Client, Events } from "discord.js";
 
-const childLogger = logger.child({ module: "events.onReady" });
+const childLogger = createModuleLogger(import.meta.url);
 
 export default {
   name: Events.ClientReady,

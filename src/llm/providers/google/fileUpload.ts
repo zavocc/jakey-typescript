@@ -1,4 +1,4 @@
-import logger from "../../../lib/pinoLogger.js";
+import { createModuleLogger } from "../../../lib/pinoLogger.js";
 import { GoogleClient } from "../../../lib/genAIClients.js";
 import { tmpdir } from "node:os";
 import { mkdtemp, rm } from "node:fs/promises";
@@ -7,7 +7,7 @@ import { join } from "node:path";
 import { pipeline } from "node:stream/promises";
 import { Readable } from "node:stream";
 
-const childLogger = logger.child({ module: "llm.providers.google.fileUpload" });
+const childLogger = createModuleLogger(import.meta.url);
 
 export async function uploadToGoogleFilesAPI(fileName: string, mimeType: string, fileURL: string): Promise<string> {
   // Create a temporary directory for the download

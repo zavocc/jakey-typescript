@@ -1,10 +1,10 @@
 // pulls preferences and other data from the database
-import logger from "./pinoLogger.js";
+import { createModuleLogger } from "./pinoLogger.js";
 import { z } from "zod";
 import { PreferencesSchema } from "../types/schemas.js";
 import { getDB } from "./services/mongodb/index.js";
 
-const childLogger = logger.child({ module: "lib.preferencesDBLoader" });
+const childLogger = createModuleLogger(import.meta.url);
 const MONGODB_COLLECTION_NAME = "discord_user_preferences";
 type Preferences = z.infer<typeof PreferencesSchema>;
 type PreferenceKey = keyof Preferences;

@@ -1,4 +1,4 @@
-import logger from "../../lib/pinoLogger.js";
+import { createModuleLogger } from "../../lib/pinoLogger.js";
 import { loadModelsFile } from "../../llm/chat/modelsSelection.js";
 import { savePreferences } from "../../lib/preferencesDBLoader.js";
 import {
@@ -9,7 +9,7 @@ import {
   SlashCommandSubcommandBuilder,
 } from "discord.js";
 
-const childLogger = logger.child({ module: "commands.llm.models" });
+const childLogger = createModuleLogger(import.meta.url);
 
 export default {
   data: new SlashCommandBuilder()

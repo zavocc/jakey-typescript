@@ -1,8 +1,8 @@
-import logger from '../../../lib/pinoLogger.js';
+import { createModuleLogger } from '../../../lib/pinoLogger.js';
 import { OpenAIClient } from '../../../lib/genAIClients.js';
 import type { ChatCompletion, ChatCompletionCreateParamsNonStreaming, ChatCompletionMessageParam } from 'openai/resources';
 
-const childLogger = logger.child({ module: 'llm.providers.openai.generateContent' });
+const childLogger = createModuleLogger(import.meta.url);
 
 export async function text_chat_completion(
   model: string,

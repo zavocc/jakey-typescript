@@ -1,12 +1,12 @@
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
-import logger from "../lib/pinoLogger.js";
+import { createModuleLogger } from "../lib/pinoLogger.js";
 import type { Message } from "discord.js";
 import type { ModelProps } from "../types/schemas.js";
 import type { FileMetadata } from "./types.js";
 
-const childLogger = logger.child({ module: "llm.agentLoader" });
+const childLogger = createModuleLogger(import.meta.url);
 
 export type LLMExecuteFn = (
   prompt: string,

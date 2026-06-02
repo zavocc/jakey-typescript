@@ -1,4 +1,4 @@
-import logger from "../../lib/pinoLogger.js";
+import { createModuleLogger } from "../../lib/pinoLogger.js";
 import {
   AutocompleteInteraction,
   ChatInputCommandInteraction,
@@ -10,7 +10,7 @@ import { fetchListAvailableTool } from "../../llm/tools/utils.js";
 import { clearContext } from "../../llm/chat/contextMemory.js";
 import { savePreferences } from "../../lib/preferencesDBLoader.js";
 
-const childLogger = logger.child({ module: "commands.llm.tools" });
+const childLogger = createModuleLogger(import.meta.url);
 
 export default {
   data: new SlashCommandBuilder()

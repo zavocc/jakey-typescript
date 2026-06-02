@@ -1,4 +1,4 @@
-import logger from "../../../lib/pinoLogger.js";
+import { createModuleLogger } from "../../../lib/pinoLogger.js";
 import { sendChunkedMessage } from "../../chat/message.js";
 import { loadContext, saveContext } from "../../chat/contextMemory.js";
 import { constructUserPrompt } from "./promptTools.js";
@@ -17,7 +17,7 @@ import type { GenerateContentConfig, FunctionDeclaration, Part } from "@google/g
 import { fetchToolPack } from "../../tools/utils.js";
 import { ToolUnion } from "@google/genai/web";
 
-const childLogger = logger.child({ module: "llm.providers.google.agent" });
+const childLogger = createModuleLogger(import.meta.url);
 
 export async function llmExecute(
   prompt: string,
@@ -185,7 +185,7 @@ export async function llmExecute(
             // Call tools if it doesn't reach the max limit, if it does, we output the error instead
             if (toolCallTurnCount >= toolCallHardLimit) {
               toolResult = { error: "Reached tool call hard limit. Please try again later." };
-              logger.error({ 'tool_name': parts.functionCall.name, 'tool_id': parts.functionCall.id, 'user_snowflake': discord_interaction.author.id }, "Max tool calls limit reached")
+              childLogger.error({ 'tool_name': parts.functionCall.name, 'tool_id': parts.functionCall.id, 'user_snowflake': discord_interaction.author.id }, "Max tool calls limit reached")
             } else {
               toolResult = await toolFunction(discord_interaction, parts.functionCall.args ?? {});
 
@@ -216,7 +216,7 @@ export async function llmExecute(
                 toolResult = { output: `${toolResult}` };
               }
 
-              logger.debug({ tool_result: toolResult, tool_name: parts.functionCall.name, tool_id: parts.functionCall.id, user_snowflake: discord_interaction.author.id }, "Tool result")
+              childLogger.debug({ tool_result: toolResult, tool_name: parts.functionCall.name, tool_id: parts.functionCall.id, user_snowflake: discord_interaction.author.id }, "Tool result")
             }
           } catch (error) {
             const errorMessage = error instanceof Error ? error.message : String(error);
@@ -234,7 +234,7 @@ export async function llmExecute(
             toolCallTurnCount += 1;
           }
         } else {
-          logger.error({ 'tool_name': parts.functionCall.name, 'schema_found': schemaHasFound, 'user_snowflake': discord_interaction.author.id }, "Attempted to call tool but is not available")
+          childLogger.error({ 'tool_name': parts.functionCall.name, 'schema_found': schemaHasFound, 'user_snowflake': discord_interaction.author.id }, "Attempted to call tool but is not available")
           toolResult = {
             error: schemaHasFound
               ? `Tool ${parts.functionCall.name} is not available in the registered functions.`

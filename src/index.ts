@@ -1,5 +1,5 @@
 import "./lib/initEnv.js";
-import logger from "./lib/pinoLogger.js";
+import { createModuleLogger } from "./lib/pinoLogger.js";
 import {
   Client,
   Collection,
@@ -11,12 +11,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 
-// child logger for main
-const childLogger = logger.child(
-  {
-    module: "main_index"
-  }
-)
+const childLogger = createModuleLogger(import.meta.url, "main_index");
 
 // TODO: to polish
 import { startServices } from "./lib/services/index.js";

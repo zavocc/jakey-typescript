@@ -1,8 +1,8 @@
-import logger from "../../lib/pinoLogger.js";
+import { createModuleLogger } from "../../lib/pinoLogger.js";
 import { ChatInputCommandInteraction, SlashCommandBuilder } from "discord.js";
 import { stopServices } from "../../lib/services/index.js";
 
-const childLogger = logger.child({ module: "commands.utility.shutdown" });
+const childLogger = createModuleLogger(import.meta.url);
 
 export default {
   data: new SlashCommandBuilder()

@@ -1,6 +1,6 @@
-import logger from "../pinoLogger.js";
+import { createModuleLogger } from "../pinoLogger.js";
 import { startDB, stopDB } from "./mongodb/index.js";
-const childLogger = logger.child({ module: "lib.services" });
+const childLogger = createModuleLogger(import.meta.url);
 
 export async function startServices(): Promise<void> {
   // database

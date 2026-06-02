@@ -1,8 +1,8 @@
-import logger from "../pinoLogger.js";
+import { createModuleLogger } from "../pinoLogger.js";
 import crypto from "node:crypto";
 import { filesAdapter } from "./index.js";
 
-const childLogger = logger.child({ module: "lib.files.fileUpload" });
+const childLogger = createModuleLogger(import.meta.url);
 
 export async function uploadFileLLM(fileName: string, mimeType: string, fileURL: string): Promise<string> {
   const finalFileName = `${crypto.randomUUID()}.${fileName}`;

@@ -1,11 +1,11 @@
-import logger from "../../../../lib/pinoLogger.js";
+import { createModuleLogger } from "../../../../lib/pinoLogger.js";
 import { uploadToGoogleFilesAPI } from "../../../providers/google/fileUpload.js";
 import { GoogleClient } from "../../../../lib/genAIClients.js";
 import { getSendableChannel } from "../../functions.js";
 import { createUserContent, createPartFromUri } from "@google/genai";
 import { EmbedBuilder, Message, type SendableChannels } from "discord.js";
 
-const childLogger = logger.child({ module: "llm.tools.builtins.search_messages" });
+const childLogger = createModuleLogger(import.meta.url);
 
 type ResultsShape = {
   id: string;

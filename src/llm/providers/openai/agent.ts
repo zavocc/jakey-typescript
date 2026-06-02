@@ -1,4 +1,4 @@
-import logger from "../../../lib/pinoLogger.js";
+import { createModuleLogger } from "../../../lib/pinoLogger.js";
 import { sendChunkedMessage } from "../../chat/message.js";
 import { loadContext, saveContext } from "../../chat/contextMemory.js";
 import { constructUserPrompt } from "./promptTools.js";
@@ -16,7 +16,7 @@ import type { ChatCompletionCreateParamsNonStreaming, ChatCompletionMessageParam
 // Tool loader
 import { fetchToolPack } from "../../tools/utils.js";
 
-const childLogger = logger.child({ module: "llm.providers.openai.agent" });
+const childLogger = createModuleLogger(import.meta.url);
 
 export async function llmExecute(
   prompt: string,
@@ -147,7 +147,7 @@ export async function llmExecute(
           try {
             if (toolCallTurnCount >= toolCallHardLimit) {
               parsedToolResult = { error: "Reached tool call hard limit. Please try again later." };
-              logger.error({ tool_name: toolName, tool_id: toolCall.id, user_snowflake: discord_interaction.author.id }, "Max tool calls limit reached")
+              childLogger.error({ tool_name: toolName, tool_id: toolCall.id, user_snowflake: discord_interaction.author.id }, "Max tool calls limit reached")
             } else {
               const toolResult = await toolFunction(discord_interaction, JSON.parse(toolCall.function.arguments) ?? {});
 
@@ -179,7 +179,7 @@ export async function llmExecute(
                 parsedToolResult = toolResult;
               }
 
-              logger.debug({ tool_result: toolResult, tool_name: toolName, tool_id: toolCall.id, user_snowflake: discord_interaction.author.id }, "Tool result")
+              childLogger.debug({ tool_result: toolResult, tool_name: toolName, tool_id: toolCall.id, user_snowflake: discord_interaction.author.id }, "Tool result")
             }
           } catch (error) {
             const errorMessage = error instanceof Error ? error.message : String(error);
@@ -194,7 +194,7 @@ export async function llmExecute(
             toolCallTurnCount += 1;
           }
         } else {
-          logger.error({ tool_name: toolName, schema_found: schemaHasFound, user_snowflake: discord_interaction.author.id }, "Attempted to call tool but is not available")
+          childLogger.error({ tool_name: toolName, schema_found: schemaHasFound, user_snowflake: discord_interaction.author.id }, "Attempted to call tool but is not available")
           parsedToolResult = {
             error: schemaHasFound
               ? `Tool ${toolName} is not available in the registered functions.`

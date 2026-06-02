@@ -1,8 +1,8 @@
-import logger from "../../../../lib/pinoLogger.js";
+import { createModuleLogger } from "../../../../lib/pinoLogger.js";
 import { getSendableChannel } from "../../functions.js";
 import { EmbedBuilder, type Message, type SendableChannels } from "discord.js";
 
-const childLogger = logger.child({ module: "llm.tools.apis.WebSearch" });
+const childLogger = createModuleLogger(import.meta.url);
 
 export const TOOL_HUMAN_NAME = "Web Search"
 export const TOOL_SCHEMAS = [
