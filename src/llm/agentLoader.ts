@@ -8,13 +8,7 @@ import type { FileMetadata } from "./types.js";
 
 const childLogger = createModuleLogger(import.meta.url);
 
-export type LLMExecuteFn = (
-  prompt: string,
-  model_props: ModelProps,
-  discord_user_id: string,
-  discord_interaction: Message,
-  attachment_urls?: Array<FileMetadata>
-) => Promise<void>;
+export type LLMExecuteFn = (prompt: string, model_props: ModelProps, discord_user_id: string, discord_interaction: Message, attachment_urls?: Array<FileMetadata>) => Promise<void>;
 
 // Detect the current runtime extension (.ts during tsx development, or .js in production)
 const runtimeExtension = path.extname(fileURLToPath(import.meta.url));

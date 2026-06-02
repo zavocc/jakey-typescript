@@ -45,7 +45,8 @@
             "thread_name": "openrouter_google",
             "additional_properties": {
               "reasoning": {
-                "enabled": false
+                "enabled": true,
+                "effort": "minimal"
               }
             }
         },
