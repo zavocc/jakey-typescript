@@ -207,7 +207,7 @@ export async function llmExecute(
           {
             role: "tool",
             tool_call_id: toolCall.id,
-            content: JSON.stringify(parsedToolResult)
+            content: typeof parsedToolResult === "string" ? parsedToolResult : JSON.stringify(parsedToolResult)
           }
         )
       }
