@@ -13,7 +13,7 @@ export const ModelPropsSchema = z.object({
   model_alias: z.string(),
   enable_files: z.boolean(),
   enable_tools: z.boolean(),
-  provider: z.enum(["google", "openai", "openrouter"]),
+  provider: z.enum(["google", "openai"]),
   thread_name: z.string().optional(),
   additional_properties: z.record(z.string(), z.unknown()).optional()
 });

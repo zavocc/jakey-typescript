@@ -16,7 +16,7 @@ import type { ChatCompletionCreateParamsNonStreaming, ChatCompletionMessageParam
 // Tool loader
 import { fetchToolPack } from "../../tools/utils.js";
 
-const childLogger = logger.child({ module: "llm.providers.openrouter.agent" });
+const childLogger = logger.child({ module: "llm.providers.openai.agent" });
 
 export async function llmExecute(
   prompt: string,

@@ -7,7 +7,7 @@ export const GoogleClient = new GoogleGenAI({
 });
 
 // openai
-export const OpenRouterClient = new OpenAI({
-  apiKey: process.env.OPENROUTER_API_KEY,
-  baseURL: "https://openrouter.ai/api/v1"
+export const OpenAIClient = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY,
+  baseURL: process.env.OPENAI_PROVIDER_CUSTOM_BASEURL
 });

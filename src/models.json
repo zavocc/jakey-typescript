@@ -5,16 +5,16 @@
             "model_alias": "Kimi K2.6",
             "enable_files": true,
             "enable_tools": true,
-            "provider": "openrouter",
-            "thread_name": "openrouter"
+            "provider": "openai",
+            "thread_name": "openai"
         },
         {
             "model_id": "google/gemini-2.5-flash-lite",
-            "model_alias": "Gemini 2.5 Flash Lite (OpenRouter)",
+            "model_alias": "Gemini 2.5 Flash Lite",
             "enable_files": true,
             "enable_tools": true,
-            "provider": "openrouter",
-            "thread_name": "openrouter"
+            "provider": "openai",
+            "thread_name": "openai"
         },
         {
             "model_id": "gemini-3-flash-preview",

@@ -1,8 +1,8 @@
 import logger from '../../../lib/pinoLogger.js';
-import { OpenRouterClient } from '../../../lib/genAIClients.js';
+import { OpenAIClient } from '../../../lib/genAIClients.js';
 import type { ChatCompletion, ChatCompletionCreateParamsNonStreaming, ChatCompletionMessageParam } from 'openai/resources';
 
-const childLogger = logger.child({ module: 'llm.providers.openrouter.generateContent' });
+const childLogger = logger.child({ module: 'llm.providers.openai.generateContent' });
 
 export async function text_chat_completion(
   model: string,
@@ -12,7 +12,7 @@ export async function text_chat_completion(
   modelResponse: ChatCompletion,
   model_used: string,
 }> {
-  const modelResult = await OpenRouterClient.chat.completions.create({
+  const modelResult = await OpenAIClient.chat.completions.create({
     ...optional_params ?? {},
     model: model,
     messages: context,
