@@ -65,12 +65,12 @@ export async function llmExecute(
     if (!loadedToolPack.hasServerTools) {
       additionalParams = {
         ...additionalParams,
-        tools: [{ functionDeclarations: loadedToolPack.schemas as FunctionDeclaration[] }],
+        tools: [{ functionDeclarations: loadedToolPack.schemas as FunctionDeclaration[] }]
       };
     } else {
       additionalParams = {
         ...additionalParams,
-        tools: loadedToolPack.schemas as ToolUnion[],
+        tools: loadedToolPack.schemas as ToolUnion[]
       };
     }
   }

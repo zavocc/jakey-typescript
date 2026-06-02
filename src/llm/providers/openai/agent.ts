@@ -67,7 +67,7 @@ export async function llmExecute(
   if (model_props.enable_tools) {
     additionalParams = {
       ...additionalParams,
-      tools: loadedToolPack.schemas as Array<ChatCompletionTool>,
+      tools: loadedToolPack.schemas as Array<ChatCompletionTool>
     };
   }
 
