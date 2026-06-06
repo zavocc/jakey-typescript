@@ -160,6 +160,8 @@ export async function llmExecute(
   const citations: Array<SupportableCitation> = [];
   const queries: Array<string> = [];
   const dynamicTools = model_props.enable_tools ? toCodexDynamicTools(loadedToolPack.schemas) : [];
+  const toolCallHardLimit = parseInt(process.env.TOOL_CALL_TURNS_HARD_LIMIT ?? "10");
+  let toolCallTurnCount = 0;
 
   const response = await runCodexTurn({
     model: model_props.model_id,
@@ -172,16 +174,25 @@ export async function llmExecute(
       const toolFunction = loadedToolPack.functions[params.tool as keyof typeof loadedToolPack.functions];
 
       if (!Object.hasOwn(loadedToolPack.functions, params.tool) || typeof toolFunction !== "function") {
+        childLogger.error({ tool_name: params.tool, tool_id: params.callId, user_snowflake: discord_interaction.author.id }, "Attempted to call tool but is not available");
         return {
           contentItems: [{ type: "inputText", text: `Tool ${params.tool} is not available.` }],
           success: false,
         };
       }
 
-      childLogger.info({ tool_invoked: params.tool, tool_id: params.callId, user_snowflake: discord_interaction.author.id }, "User Codex called tool");
-      childLogger.debug({ tool_name: params.tool, tool_arguments: params.arguments, tool_id: params.callId, user_snowflake: discord_interaction.author.id }, "Codex tool arguments");
+      childLogger.info({ tool_invoked: params.tool, tool_id: params.callId, user_snowflake: discord_interaction.author.id }, "User LLM called tool");
+      childLogger.debug({ tool_name: params.tool, tool_arguments: params.arguments, tool_id: params.callId, user_snowflake: discord_interaction.author.id }, "Arg tool");
 
       try {
+        if (toolCallTurnCount >= toolCallHardLimit) {
+          childLogger.error({ tool_name: params.tool, tool_id: params.callId, user_snowflake: discord_interaction.author.id }, "Max tool calls limit reached");
+          return {
+            contentItems: [{ type: "inputText", text: JSON.stringify({ error: "Reached tool call hard limit. Please try again later." }) }],
+            success: false,
+          };
+        }
+
         const toolResult = await toolFunction(discord_interaction, jsonRecordOrEmpty(params.arguments));
 
         if (typeof toolResult === "object" && toolResult !== null && Object.hasOwn(toolResult, "supportable_sources")) {
@@ -201,18 +212,22 @@ export async function llmExecute(
           ? `The tool ${params.tool} did not return a result`
           : stringifyToolResult(toolResult);
 
+        childLogger.debug({ tool_result: toolResult, tool_name: params.tool, tool_id: params.callId, user_snowflake: discord_interaction.author.id }, "Tool result");
+
         return {
           contentItems: [{ type: "inputText", text: content }],
           success: true,
         };
       } catch (error) {
         const errorMessage = error instanceof Error ? error.message : String(error);
-        childLogger.error({ tool_name: params.tool, tool_error: errorMessage, user_snowflake: discord_interaction.author.id }, "Error calling Codex dynamic tool");
+        childLogger.error({ tool_name: params.tool, tool_error: errorMessage, user_snowflake: discord_interaction.author.id }, "Error calling tool");
 
         return {
           contentItems: [{ type: "inputText", text: `Failed to execute tool ${params.tool}: ${errorMessage}` }],
           success: false,
         };
+      } finally {
+        toolCallTurnCount += 1;
       }
     },
   });
