@@ -49,7 +49,7 @@
         },
         {
             "model_id": "gemini-3.5-flash",
-            "model_alias": "Gemini 3.5 Flash Flex Mode Low",
+            "model_alias": "Gemini 3.5 Flash Flex Mode",
             "enable_files": true,
             "enable_tools": true,
             "provider": "google",
@@ -57,7 +57,7 @@
                 "serviceTier": "flex",
                 "maxOutputTokens": 3024,
                 "thinkingConfig": {
-                    "thinkingLevel": "low"
+                    "thinkingLevel": "minimal"
                 },
                 "mediaResolution": "MEDIA_RESOLUTION_LOW"
             }
