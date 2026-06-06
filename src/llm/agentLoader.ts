@@ -13,7 +13,7 @@ export type LLMExecuteFn = (prompt: string, model_props: ModelProps, discord_use
 // Detect the current runtime extension (.ts during tsx development, or .js in production)
 const runtimeExtension = path.extname(fileURLToPath(import.meta.url));
 
-export async function pullAgent(provider: "google" | "openai"): Promise<LLMExecuteFn> {
+export async function pullAgent(provider: "google" | "openai" | "codex"): Promise<LLMExecuteFn> {
   const currentDir = path.dirname(fileURLToPath(import.meta.url));
   const agentPath = path.join(currentDir, "providers", provider, `agent${runtimeExtension}`);
 

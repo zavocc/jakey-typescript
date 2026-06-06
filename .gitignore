@@ -3,6 +3,9 @@ node_modules/
 **/harbour/*
 package-lock.json
 .codex
+.codex-temp/
+codex_workspace/*
+!codex_workspace/.gitkeep
 .env.development
 .env
 files.config.json

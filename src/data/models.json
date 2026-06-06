@@ -1,6 +1,39 @@
 {
     "models": [
         {
+            "model_id": "gpt-5.5",
+            "model_alias": "GPT-5.5 (Low)",
+            "enable_files": true,
+            "enable_tools": true,
+            "provider": "codex",
+            "thread_name": "codex",
+            "additional_properties": {
+                "reasoning_effort": "low"
+            }
+        },
+        {
+            "model_id": "gpt-5.5",
+            "model_alias": "GPT-5.5 (Medium)",
+            "enable_files": true,
+            "enable_tools": true,
+            "provider": "codex",
+            "thread_name": "codex",
+            "additional_properties": {
+                "reasoning_effort": "medium"
+            }
+        },
+        {
+            "model_id": "gpt-5.5",
+            "model_alias": "GPT-5.5 (High)",
+            "enable_files": true,
+            "enable_tools": true,
+            "provider": "codex",
+            "thread_name": "codex",
+            "additional_properties": {
+                "reasoning_effort": "high"
+            }
+        },
+        {
             "model_id": "moonshotai/kimi-k2.6:free",
             "model_alias": "Kimi K2.6 (OpenRouter)",
             "enable_files": true,
