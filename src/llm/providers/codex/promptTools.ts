@@ -9,7 +9,7 @@ export async function constructUserPrompt(prompt: string, attachment_urls?: Arra
     const attachmentInputs = await Promise.all(
       attachment_urls.map(async (attachment) => {
         const publicUrl = await uploadFileLLM(attachment.fileName, attachment.mimeType, attachment.fileURI);
-        const metastring = `File URL: ${publicUrl}, Original File URL: ${attachment.fileURI}, File Name: ${attachment.fileName}, Alt Text: ${attachment.AltText ?? "No alt text"}, Mime Type: ${attachment.mimeType}`;
+        const metastring = `File URL: ${attachment.fileURI}, File Name: ${attachment.fileName}, Alt Text: ${attachment.AltText ?? "No alt text"}, Mime Type: ${attachment.mimeType}`;
         const content: Array<CodexUserInput> = [];
 
         if (attachment.mimeType.startsWith("image/")) {
