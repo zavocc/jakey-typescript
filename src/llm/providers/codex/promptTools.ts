@@ -1,6 +1,6 @@
 import { uploadFileLLM } from "../../../lib/files/fileUpload.js";
 import type { FileMetadata } from "../../types.js";
-import type { CodexUserInput } from "./generateContent.js";
+import type { CodexUserInput } from "./types.js";
 
 export async function constructUserPrompt(prompt: string, attachment_urls?: Array<FileMetadata>): Promise<Array<CodexUserInput>> {
   const inputs: Array<CodexUserInput> = [];

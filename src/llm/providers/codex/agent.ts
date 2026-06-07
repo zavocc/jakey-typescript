@@ -3,7 +3,8 @@ import { sendChunkedMessage } from "../../chat/message.js";
 import { loadContext, saveContext } from "../../chat/contextMemory.js";
 import { constructUserPrompt } from "./promptTools.js";
 import { JAKEY_SYSTEM_PROMPT } from "../../../constants.js";
-import { runCodexTurn, type CodexDynamicToolCallParams, type CodexDynamicToolSpec, type CodexReasoningEffort, type JsonValue } from "./generateContent.js";
+import { runCodexTurn } from "./generateContent.js";
+import { formatContextUsage, imageFileName, jsonRecordOrEmpty, parseReasoningEffort, readStoredThreadId, stringifyToolResult, toCodexDynamicTools } from "./functions.js";
 import { loadPreferences } from "../../../lib/preferencesDBLoader.js";
 import { isSupportableCitations, linkBtnAggregator, queryBtnAggregator, sendBtns } from "../../chat/btnCitationSend.js";
 import { assertAgentProviderExclusive } from "../../tools/agentProviderExclusive.js";
@@ -12,106 +13,9 @@ import type { SupportableCitation } from "../../chat/btnCitationSend.js";
 import type { FileMetadata } from "../../types.js";
 import type { Message, SendableChannels } from "discord.js";
 import type { ModelProps } from "../../../types/schemas.js";
+import type { CodexDynamicToolCallParams, CodexThreadContext } from "./types.js";
 
 const childLogger = createModuleLogger(import.meta.url);
-
-type CodexThreadContext = {
-  threadId: string;
-};
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null && !Array.isArray(value);
-}
-
-function readStoredThreadId(context: unknown): string | null {
-  if (!Array.isArray(context)) {
-    return null;
-  }
-
-  const firstItem = context.at(0);
-  if (!isRecord(firstItem) || typeof firstItem.threadId !== "string") {
-    return null;
-  }
-
-  return firstItem.threadId;
-}
-
-function isJsonValue(value: unknown): value is JsonValue {
-  if (value === null || typeof value === "string" || typeof value === "boolean") {
-    return true;
-  }
-
-  if (typeof value === "number") {
-    return Number.isFinite(value);
-  }
-
-  if (Array.isArray(value)) {
-    return value.every(isJsonValue);
-  }
-
-  if (isRecord(value)) {
-    return Object.values(value).every(isJsonValue);
-  }
-
-  return false;
-}
-
-function toCodexDynamicTools(schemas: unknown[]): CodexDynamicToolSpec[] {
-  const dynamicTools: CodexDynamicToolSpec[] = [];
-
-  for (const schema of schemas) {
-    if (!isRecord(schema) || typeof schema.name !== "string" || typeof schema.description !== "string") {
-      continue;
-    }
-
-    dynamicTools.push({
-      namespace: "jakey",
-      name: schema.name,
-      description: schema.description,
-      inputSchema: isJsonValue(schema.parameters) ? schema.parameters : {
-        type: "object",
-        properties: {},
-      },
-    });
-  }
-
-  return dynamicTools;
-}
-
-function jsonRecordOrEmpty(value: JsonValue): Record<string, unknown> {
-  return isRecord(value) ? value : {};
-}
-
-function stringifyToolResult(toolResult: unknown): string {
-  if (typeof toolResult === "string") {
-    return toolResult;
-  }
-
-  if (typeof toolResult === "bigint") {
-    return `${toolResult}`;
-  }
-
-  return JSON.stringify(toolResult);
-}
-
-function parseReasoningEffort(additionalProperties: Record<string, unknown> | undefined): CodexReasoningEffort | undefined {
-  if (!additionalProperties || typeof additionalProperties.reasoning_effort !== "string") {
-    return undefined;
-  }
-
-  if (
-    additionalProperties.reasoning_effort === "none" ||
-    additionalProperties.reasoning_effort === "minimal" ||
-    additionalProperties.reasoning_effort === "low" ||
-    additionalProperties.reasoning_effort === "medium" ||
-    additionalProperties.reasoning_effort === "high" ||
-    additionalProperties.reasoning_effort === "xhigh"
-  ) {
-    return additionalProperties.reasoning_effort;
-  }
-
-  throw new Error(`Unsupported Codex reasoning effort: ${additionalProperties.reasoning_effort}`);
-}
 
 export async function llmExecute(
   prompt: string,
@@ -170,6 +74,9 @@ export async function llmExecute(
     baseInstructions: JAKEY_SYSTEM_PROMPT,
     dynamicTools,
     reasoningEffort: parseReasoningEffort(model_props.additional_properties),
+    onCompaction: async () => {
+      await sendChunkedMessage(messageChannel, "⏳ Compacting our conversation so we can chat more...");
+    },
     dynamicToolHandler: async (params: CodexDynamicToolCallParams) => {
       const toolFunction = loadedToolPack.functions[params.tool as keyof typeof loadedToolPack.functions];
 
@@ -241,6 +148,16 @@ export async function llmExecute(
     await sendChunkedMessage(messageChannel, "I have not received a response from the model.");
   }
 
+  for (const [index, generatedImage] of response.generatedImages.entries()) {
+    await messageChannel.send({
+      content: generatedImage.revisedPrompt ? `Generated image: ${generatedImage.revisedPrompt}` : "Generated image",
+      files: [{
+        attachment: generatedImage.buffer,
+        name: imageFileName(generatedImage.mimeType, index + 1),
+      }],
+    });
+  }
+
   await sendBtns(messageChannel, queryBtnAggregator(queries), linkBtnAggregator(citations));
-  await messageChannel.send(`-# [DEBUG] Model used: ${response.model_used}`);
+  await messageChannel.send(`-# [DEBUG] Model used: ${response.model_used} | ${formatContextUsage(response.tokenUsage)}`);
 }

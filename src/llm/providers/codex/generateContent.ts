@@ -1,163 +1,40 @@
 import { spawn, type ChildProcessWithoutNullStreams } from "node:child_process";
-import { createRequire } from "node:module";
-import { existsSync } from "node:fs";
-import { mkdir } from "node:fs/promises";
-import path from "node:path";
 import readline from "node:readline";
 import { createModuleLogger } from "../../../lib/pinoLogger.js";
+import { extractAgentMessagesFromTurn, getCodexWorkingDirectory, isJsonValue, isRecord, parseGeneratedImageItem, parseThreadResponse, parseTokenUsage, parseTurnStartResponse, resolveCodexLauncher } from "./functions.js";
+import type {
+  CodexCompactionHandler,
+  CodexDynamicToolCallParams,
+  CodexDynamicToolHandler,
+  CodexDynamicToolSpec,
+  CodexGeneratedImage,
+  CodexReasoningEffort,
+  CodexThreadResponse,
+  CodexTokenUsage,
+  CodexTurnResult,
+  CodexUserInput,
+  JsonRpcPending,
+  RunCodexTurnResult,
+  TurnWaiter,
+} from "./types.js";
 
 const childLogger = createModuleLogger(import.meta.url);
-
-export type JsonValue = null | boolean | number | string | JsonValue[] | { [key: string]: JsonValue };
-
-export type CodexUserInput =
-  | { type: "text"; text: string; text_elements: [] }
-  | { type: "image"; url: string; detail?: "low" | "high" | "auto" };
-
-export type CodexDynamicToolSpec = {
-  namespace?: string;
-  name: string;
-  description: string;
-  inputSchema: JsonValue;
-  deferLoading?: boolean;
-};
-
-export type CodexReasoningEffort = "none" | "minimal" | "low" | "medium" | "high" | "xhigh";
-
-export type CodexDynamicToolCallParams = {
-  threadId: string;
-  turnId: string;
-  callId: string;
-  namespace: string | null;
-  tool: string;
-  arguments: JsonValue;
-};
-
-export type CodexDynamicToolCallResponse = {
-  contentItems: Array<{ type: "inputText"; text: string } | { type: "inputImage"; imageUrl: string }>;
-  success: boolean;
-};
-
-type CodexDynamicToolHandler = (params: CodexDynamicToolCallParams) => Promise<CodexDynamicToolCallResponse>;
-
-type JsonRpcPending = {
-  resolve: (value: unknown) => void;
-  reject: (error: Error) => void;
-};
-
-type TurnResult = {
-  finalResponse: string;
-};
-
-type TurnWaiter = {
-  resolve: (value: TurnResult) => void;
-  reject: (error: Error) => void;
-};
-
-type CodexThreadResponse = {
-  thread: {
-    id: string;
-  };
-  model: string;
-};
-
-type CodexTurnStartResponse = {
-  turn: {
-    id: string;
-  };
-};
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null && !Array.isArray(value);
-}
-
-function extractAgentMessagesFromTurn(turn: unknown): string[] {
-  if (!isRecord(turn) || !Array.isArray(turn.items)) {
-    return [];
-  }
-
-  const agentMessages: string[] = [];
-  for (const item of turn.items) {
-    if (!isRecord(item) || item.type !== "agentMessage" || typeof item.text !== "string") {
-      continue;
-    }
-    agentMessages.push(item.text);
-  }
-
-  return agentMessages;
-}
-
-function parseThreadResponse(value: unknown): CodexThreadResponse {
-  if (!isRecord(value) || !isRecord(value.thread) || typeof value.thread.id !== "string" || typeof value.model !== "string") {
-    throw new Error("Invalid Codex thread response.");
-  }
-
-  return {
-    thread: {
-      id: value.thread.id,
-    },
-    model: value.model,
-  };
-}
-
-function parseTurnStartResponse(value: unknown): CodexTurnStartResponse {
-  if (!isRecord(value) || !isRecord(value.turn) || typeof value.turn.id !== "string") {
-    throw new Error("Invalid Codex turn response.");
-  }
-
-  return {
-    turn: {
-      id: value.turn.id,
-    },
-  };
-}
-
-function resolveCodexLauncher(): { command: string; argsPrefix: string[] } {
-  if (process.env.CODEX_CLI_PATH) {
-    return { command: process.env.CODEX_CLI_PATH, argsPrefix: [] };
-  }
-
-  const require = createRequire(import.meta.url);
-  const candidatePackageJsons: string[] = [];
-
-  try {
-    candidatePackageJsons.push(require.resolve("@openai/codex/package.json"));
-  } catch {
-    childLogger.debug("Direct @openai/codex package is not resolvable; checking codex-sdk nested dependency.");
-  }
-
-  try {
-    const codexSdkPackageJson = require.resolve("@openai/codex-sdk/package.json");
-    candidatePackageJsons.push(path.join(path.dirname(codexSdkPackageJson), "node_modules", "@openai", "codex", "package.json"));
-  } catch {
-    childLogger.debug("@openai/codex-sdk package is not resolvable for Codex CLI fallback.");
-  }
-
-  for (const packageJsonPath of candidatePackageJsons) {
-    const codexEntrypoint = path.join(path.dirname(packageJsonPath), "bin", "codex.js");
-    if (existsSync(codexEntrypoint)) {
-      return { command: process.execPath, argsPrefix: [codexEntrypoint] };
-    }
-  }
-
-  return { command: "codex", argsPrefix: [] };
-}
-
-async function getCodexWorkingDirectory(): Promise<string> {
-  const workingDirectory = path.join(process.cwd(), "codex_workspace");
-  await mkdir(workingDirectory, { recursive: true });
-  return workingDirectory;
-}
 
 class CodexAppServerClient {
   private readonly childProcess: ChildProcessWithoutNullStreams;
   private readonly pendingRequests = new Map<string, JsonRpcPending>();
   private readonly turnWaiters = new Map<string, TurnWaiter>();
-  private readonly completedTurns = new Map<string, TurnResult>();
+  private readonly completedTurns = new Map<string, CodexTurnResult>();
   private readonly agentMessagesByTurn = new Map<string, string[]>();
+  private readonly tokenUsageByTurn = new Map<string, CodexTokenUsage>();
+  private readonly compactedTurns = new Set<string>();
+  private readonly generatedImagesByTurn = new Map<string, CodexGeneratedImage[]>();
   private nextRequestId = 1;
 
-  public constructor(private readonly dynamicToolHandler: CodexDynamicToolHandler) {
+  public constructor(
+    private readonly dynamicToolHandler: CodexDynamicToolHandler,
+    private readonly compactionHandler: CodexCompactionHandler,
+  ) {
     const launcher = resolveCodexLauncher();
     this.childProcess = spawn(launcher.command, [...launcher.argsPrefix, "app-server", "--stdio"], {
       env: process.env,
@@ -242,7 +119,7 @@ class CodexAppServerClient {
     cwd: string;
     reasoningEffort?: CodexReasoningEffort;
     input: CodexUserInput[];
-  }): Promise<TurnResult> {
+  }): Promise<CodexTurnResult> {
     const response = parseTurnStartResponse(await this.request("turn/start", {
       threadId: params.threadId,
       input: params.input,
@@ -263,7 +140,7 @@ class CodexAppServerClient {
       return completedTurn;
     }
 
-    return new Promise<TurnResult>((resolve, reject) => {
+    return new Promise<CodexTurnResult>((resolve, reject) => {
       this.turnWaiters.set(response.turn.id, { resolve, reject });
     });
   }
@@ -395,13 +272,23 @@ class CodexAppServerClient {
       callId: value.callId,
       namespace: typeof value.namespace === "string" ? value.namespace : null,
       tool: value.tool,
-      arguments: this.isJsonValue(value.arguments) ? value.arguments : {},
+      arguments: isJsonValue(value.arguments) ? value.arguments : {},
     };
   }
 
   private handleNotification(message: Record<string, unknown>): void {
     if (message.method === "item/completed" && isRecord(message.params)) {
-      this.handleItemCompleted(message.params);
+      void this.handleItemCompleted(message.params);
+      return;
+    }
+
+    if (message.method === "thread/compacted" && isRecord(message.params)) {
+      void this.handleCompaction(message.params);
+      return;
+    }
+
+    if (message.method === "thread/tokenUsage/updated" && isRecord(message.params)) {
+      this.handleTokenUsageUpdated(message.params);
       return;
     }
 
@@ -421,7 +308,20 @@ class CodexAppServerClient {
     }
   }
 
-  private handleItemCompleted(params: Record<string, unknown>): void {
+  private async handleItemCompleted(params: Record<string, unknown>): Promise<void> {
+    if (typeof params.turnId === "string" && isRecord(params.item) && params.item.type === "contextCompaction") {
+      void this.handleCompaction(params);
+    }
+
+    if (typeof params.turnId === "string") {
+      const generatedImage = await parseGeneratedImageItem(params.item);
+      if (generatedImage) {
+        const generatedImages = this.generatedImagesByTurn.get(params.turnId) ?? [];
+        generatedImages.push(generatedImage);
+        this.generatedImagesByTurn.set(params.turnId, generatedImages);
+      }
+    }
+
     if (typeof params.turnId !== "string" || !isRecord(params.item) || params.item.type !== "agentMessage" || typeof params.item.text !== "string") {
       return;
     }
@@ -431,6 +331,34 @@ class CodexAppServerClient {
     this.agentMessagesByTurn.set(params.turnId, messages);
   }
 
+  private async handleCompaction(params: Record<string, unknown>): Promise<void> {
+    const turnId = typeof params.turnId === "string" ? params.turnId : null;
+    if (turnId && this.compactedTurns.has(turnId)) {
+      return;
+    }
+
+    if (turnId) {
+      this.compactedTurns.add(turnId);
+    }
+
+    try {
+      await this.compactionHandler();
+    } catch (error) {
+      childLogger.warn({ cause: error }, "Failed to send Codex compaction interstitial.");
+    }
+  }
+
+  private handleTokenUsageUpdated(params: Record<string, unknown>): void {
+    if (typeof params.turnId !== "string") {
+      return;
+    }
+
+    const tokenUsage = parseTokenUsage(params);
+    if (tokenUsage) {
+      this.tokenUsageByTurn.set(params.turnId, tokenUsage);
+    }
+  }
+
   private handleTurnCompleted(params: Record<string, unknown>): void {
     if (!isRecord(params.turn) || typeof params.turn.id !== "string") {
       return;
@@ -438,7 +366,11 @@ class CodexAppServerClient {
 
     const turnId = params.turn.id;
     const agentMessages = this.agentMessagesByTurn.get(turnId) ?? extractAgentMessagesFromTurn(params.turn);
-    const result = { finalResponse: agentMessages.join("\n\n").trim() };
+    const result = {
+      finalResponse: agentMessages.join("\n\n").trim(),
+      tokenUsage: this.tokenUsageByTurn.get(turnId) ?? null,
+      generatedImages: this.generatedImagesByTurn.get(turnId) ?? [],
+    };
     this.completedTurns.set(turnId, result);
 
     const waiter = this.turnWaiters.get(turnId);
@@ -467,26 +399,6 @@ class CodexAppServerClient {
     }
     this.turnWaiters.clear();
   }
-
-  private isJsonValue(value: unknown): value is JsonValue {
-    if (value === null || typeof value === "string" || typeof value === "boolean") {
-      return true;
-    }
-
-    if (typeof value === "number") {
-      return Number.isFinite(value);
-    }
-
-    if (Array.isArray(value)) {
-      return value.every((item) => this.isJsonValue(item));
-    }
-
-    if (isRecord(value)) {
-      return Object.values(value).every((item) => this.isJsonValue(item));
-    }
-
-    return false;
-  }
 }
 
 export async function runCodexTurn(params: {
@@ -496,13 +408,10 @@ export async function runCodexTurn(params: {
   baseInstructions: string;
   dynamicTools: CodexDynamicToolSpec[];
   dynamicToolHandler: CodexDynamicToolHandler;
+  onCompaction: CodexCompactionHandler;
   reasoningEffort?: CodexReasoningEffort;
-}): Promise<{
-  finalResponse: string;
-  threadId: string;
-  model_used: string;
-}> {
-  const client = new CodexAppServerClient(params.dynamicToolHandler);
+}): Promise<RunCodexTurnResult> {
+  const client = new CodexAppServerClient(params.dynamicToolHandler, params.onCompaction);
   const workingDirectory = await getCodexWorkingDirectory();
 
   try {
@@ -534,6 +443,8 @@ export async function runCodexTurn(params: {
       finalResponse: turn.finalResponse,
       threadId: threadResponse.thread.id,
       model_used: threadResponse.model,
+      tokenUsage: turn.tokenUsage,
+      generatedImages: turn.generatedImages,
     };
   } finally {
     client.close();
