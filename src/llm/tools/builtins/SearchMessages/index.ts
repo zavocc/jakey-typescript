@@ -3,7 +3,7 @@ import { uploadToGoogleFilesAPI } from "../../../providers/google/fileUpload.js"
 import { GoogleClient } from "../../../../lib/genAIClients.js";
 import { getSendableChannel } from "../../functions.js";
 import { createUserContent, createPartFromUri } from "@google/genai";
-import { EmbedBuilder, Message, type SendableChannels } from "discord.js";
+import { Message, type SendableChannels } from "discord.js";
 
 const childLogger = createModuleLogger(import.meta.url);
 
@@ -90,7 +90,7 @@ export const TOOL_SCHEMAS = [
 }
 ]
 
-export async function search_messages(discord_interaction: Message, params: { searchTypes: "QUERIES" | "ATTACHMENTS" | "FIRST_FIFTY_MESSAGES", queries?: Array<string>, before?: string, around?: string, after?: string, ack_magic_string?: string }): Promise<string> {
+export async function search_messages(discord_interaction: Message, params: { searchTypes: "QUERIES" | "ATTACHMENTS" | "FIRST_FIFTY_MESSAGES", queries?: Array<string>, before?: string, around?: string, after?: string, ack_magic_string?: string }): Promise<object> {
   const messageChannel: SendableChannels = getSendableChannel(discord_interaction);
 
   // Detect if we're in a server
@@ -174,34 +174,17 @@ export async function search_messages(discord_interaction: Message, params: { se
     throw new Error("No results found.");
   }
 
-  // Count no of URLs
-  const urlCount = searchResults.filter(result => result.jump_url).length;
-
-  // Create embed to list URLs upto 10 results
-  const efficientSlicedResults = searchResults.slice(0, 10);
-  const resultBody = efficientSlicedResults.map((result) => {
-    // Strip symbols from result.content and strip newlines
-    const strippedContent = result.content.replace(/[^\w\s.]/gi, '').replace(/\r?\n/g, ' ').trim();
-
-    // Check if we have URL
-    if (result.jump_url) {
-      // if strippedContent is blank, only show URL
-      if (strippedContent === '') {
-        return `- [No content](${result.jump_url})`;
-      } else {
-        return `- [${strippedContent.slice(0, 50)}](${result.jump_url})...`;
-      }
-    } else {
-      return "- Found something but an error occurred"
-    }
-  }).join('\n');
-  const resultsEmbed = new EmbedBuilder()
-    .setTitle("References:")
-    .setColor(0x0000FF)
-    .setDescription(resultBody);
+  const urlCount = searchResults.filter((result) => result.jump_url !== null).length;
+  const supportable_sources = searchResults
+    .filter((result) => result.jump_url !== null)
+    .slice(0, 10)
+    .map((result) => ({
+      title: result.content.replace(/[^\w\s.]/gi, '').replace(/\r?\n/g, ' ') || "No content",
+      url: result.jump_url as string,
+    }));
 
   if (params.searchTypes === "QUERIES") {
-    await messageChannel.send({ content: `🔍 Found **${urlCount}** messages`, embeds: [resultsEmbed] });
+    await messageChannel.send(`🔍 Found **${urlCount}** messages`);
   } else if (params.searchTypes === "ATTACHMENTS") {
     await messageChannel.send(`🔍 Pulled **${searchResults.length}** messages with attachments`);
   } else {
@@ -211,7 +194,7 @@ export async function search_messages(discord_interaction: Message, params: { se
   // Add guidelines
   if (params.ack_magic_string !== "YES I HAVE ACKNOWLEDGED") {
     childLogger.debug({ tool: 'search_messages' }, "Ack magic string not set, showing guidelines....");
-    return JSON.stringify({
+    return {
       guidelines: {
         pagination: {
           guidelines: "Use before, during, or after parameters to perform subsequent searches if the initial results are not found, these parameters can be used in conjunction to each other. For instance, when using `around` parameter it is recommended to also specify `before` and `after` parameters to search within that range only",
@@ -223,13 +206,15 @@ export async function search_messages(discord_interaction: Message, params: { se
         },
       },
       ack: "To acknowledge these guidelines including the rules on how to deal with searches and agree you will also adhere to the constraints, use the parameter 'YES I HAVE ACKNOWLEDGED' in ack_magic_string in next subequent search or next search_messages tool call so you won't see these guidelines again.",
-      results: searchResults
-    });
+      results: searchResults,
+      supportable_sources: supportable_sources,
+    };
   } else {
     childLogger.debug({ tool: 'search_messages' }, "Ack magic string set, skipping showing guidelines....");
-    return JSON.stringify({
-      results: searchResults
-    })
+    return {
+      results: searchResults,
+      supportable_sources: supportable_sources,
+    }
   }
 }
 
