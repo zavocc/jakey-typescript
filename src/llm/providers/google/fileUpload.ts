@@ -36,7 +36,7 @@ export async function uploadToGoogleFilesAPI(fileName: string, mimeType: string,
     uploadedFile = await GoogleClient.files.upload({
       file: outputFile,
       config: {
-        mimeType: mimeType
+        mimeType: mimeType.split(";")[0].trim()
       }
     });
 
