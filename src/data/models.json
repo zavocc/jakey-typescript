@@ -36,7 +36,7 @@
         },
         {
             "model_id": "gemini-3-flash-preview",
-            "model_alias": "Gemini 3 Flash Preview (Flex)",
+            "model_alias": "Gemini 3 Flash Preview Flex Mode",
             "enable_files": true,
             "enable_tools": true,
             "provider": "google",
