@@ -1,22 +1,24 @@
 import { createModuleLogger } from '../../../lib/pinoLogger.js';
 import { OpenAIClient } from '../../../lib/genAIClients.js';
-import type { ChatCompletion, ChatCompletionCreateParamsNonStreaming, ChatCompletionMessageParam } from 'openai/resources';
+import type { Response, ResponseCreateParamsNonStreaming, ResponseInput } from 'openai/resources/responses/responses';
 
 const childLogger = createModuleLogger(import.meta.url);
 
 export async function text_chat_completion(
   model: string,
-  context: Array<ChatCompletionMessageParam>,
-  optional_params?: Omit<ChatCompletionCreateParamsNonStreaming, 'messages' | 'model'>
-): Promise<{
-  modelResponse: ChatCompletion,
+  context: ResponseInput,
+  optional_params?: Omit<ResponseCreateParamsNonStreaming, 'conversation' | 'input' | 'model' | 'previous_response_id' | 'store' | 'stream' | 'temperature'>): Promise<{
+  modelResponse: Response,  
   model_used: string,
 }> {
-  const modelResult = await OpenAIClient.chat.completions.create({
+  const modelResult = await OpenAIClient.responses.create({
     ...optional_params ?? {},
     model: model,
-    messages: context,
+    input: context,
+    conversation: undefined,
+    previous_response_id: undefined,
     stream: false,
+    store: false,
     temperature: 1
   })
 
@@ -28,11 +30,10 @@ export async function text_chat_completion(
   // Debug logs
   if (modelResult.usage) childLogger.debug({
     prompt: context.at(-1),
-    promptTokenCount: modelResult.usage.prompt_tokens,
-    completionTokenCount: modelResult.usage.completion_tokens,
+    promptTokenCount: modelResult.usage.input_tokens,
+    completionTokenCount: modelResult.usage.output_tokens,
     totalTokenCount: modelResult.usage.total_tokens,
-    completionTokenDetails: modelResult.usage.completion_tokens_details,
-    responseChoices: modelResult.choices,
+    completionTokenDetails: modelResult.usage.output_tokens_details
   }, "Generated content chat");
 
 
