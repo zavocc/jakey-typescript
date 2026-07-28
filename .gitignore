@@ -1,6 +1,7 @@
 dist/
 node_modules/
 **/harbour/*
+.pnpm-store/
 package-lock.json
 .codex
 .env.development
