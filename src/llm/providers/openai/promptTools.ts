@@ -1,9 +1,9 @@
 import { uploadFileLLM } from '../../../lib/files/fileUpload.js';
 import type { FileMetadata } from '../../types.js';
-import type { ChatCompletionMessageParam } from 'openai/resources';
+import type { ResponseInputItem } from 'openai/resources/responses/responses';
 
-export async function constructUserPrompt(prompt: string, attachment_urls?: Array<FileMetadata>): Promise<Array<ChatCompletionMessageParam>> {
-  const messagesArray: Array<ChatCompletionMessageParam> = [];
+export async function constructUserPrompt(prompt: string, attachment_urls?: Array<FileMetadata>): Promise<Array<ResponseInputItem>> {
+  const messagesArray: Array<ResponseInputItem> = [];
 
   // Check if we have attachments and detect their media type via HEAD request
   // So we can push it as part of the prompt content pieces with the correct type
@@ -17,13 +17,12 @@ export async function constructUserPrompt(prompt: string, attachment_urls?: Arra
           role: "user" as const,
           content: [
             {
-              type: "image_url" as const,
-              image_url: {
-                url: curURI,
-              },
+              type: "input_image" as const,
+              image_url: curURI,
+              detail: "auto" as const,
             },
             {
-              type: "text" as const,
+              type: "input_text" as const,
               text: metastring,
             }
           ],
